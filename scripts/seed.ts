@@ -20,6 +20,7 @@
  *   SUPABASE_URL=your_url SUPABASE_SERVICE_ROLE_KEY=your_key bun run seed
  */
 
+import 'dotenv/config'
 import { createClient } from '@supabase/supabase-js';
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import type { Database } from '../src/integrations/supabase/types';

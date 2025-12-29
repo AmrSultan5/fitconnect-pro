@@ -231,8 +231,8 @@ export default function CreateDietPlan() {
           throw uploadError;
         }
 
-        const { data: urlData } = supabase.storage.from("plan-pdfs").getPublicUrl(fileName);
-        pdfUrl = urlData.publicUrl;
+        // ✅ Store ONLY the storage path (NOT a public URL)
+        pdfUrl = fileName;
       }
 
       // Deactivate previous active plan

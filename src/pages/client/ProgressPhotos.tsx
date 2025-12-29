@@ -20,6 +20,7 @@ export default function ProgressPhotos() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadDate, setUploadDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [uploadNotes, setUploadNotes] = useState("");
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
   const fetchPhotos = useCallback(async () => {
     if (!user) return;
@@ -40,6 +41,19 @@ export default function ProgressPhotos() {
       });
     } else if (photosData) {
       setPhotos(photosData);
+      const urls: Record<string, string> = {};
+
+      for (const photo of photosData) {
+        const { data } = await supabase.storage
+          .from("progress-photos")
+          .createSignedUrl(photo.photo_url, 60 * 5); // 5 minutes
+
+        if (data?.signedUrl) {
+          urls[photo.id] = data.signedUrl;
+        }
+      }
+
+      setSignedUrls(urls);
     }
     setIsLoading(false);
   }, [user, toast]);
@@ -106,13 +120,14 @@ export default function ProgressPhotos() {
       }
 
       // Get public URL
-      const { data: urlData } = supabase.storage.from("progress-photos").getPublicUrl(fileName);
-      const photoUrl = urlData.publicUrl;
+      // ✅ Store ONLY the storage path
+      const photoPath = fileName;
+
 
       // Insert record into database
       const { error: insertError } = await supabase.from("progress_photos").insert({
         user_id: user.id,
-        photo_url: photoUrl,
+        photo_url: photoPath,
         photo_date: uploadDate,
         notes: uploadNotes || null,
       });
@@ -148,54 +163,51 @@ export default function ProgressPhotos() {
     }
   };
 
-  const handleDelete = async (photoId: string, photoUrl: string) => {
+  const handleDelete = async (photoId: string, photoPath: string) => {
     if (!user) return;
-
+  
     if (!confirm("Are you sure you want to delete this photo?")) {
       return;
     }
-
+  
     try {
-      // Extract file path from URL
-      const urlParts = photoUrl.split("/");
-      const fileName = urlParts.slice(urlParts.indexOf("progress-photos") + 1).join("/");
-
-      // Delete from storage
+      // 1️⃣ Delete from storage (photoPath IS the correct path)
       const { error: storageError } = await supabase.storage
         .from("progress-photos")
-        .remove([fileName]);
-
+        .remove([photoPath]);
+  
       if (storageError) {
-        console.error("Error deleting from storage:", storageError);
+        throw storageError;
       }
-
-      // Delete from database
-      const { error: deleteError } = await supabase
+  
+      // 2️⃣ Delete DB record
+      const { error: dbError } = await supabase
         .from("progress_photos")
         .delete()
         .eq("id", photoId)
         .eq("user_id", user.id);
-
-      if (deleteError) {
-        throw deleteError;
+  
+      if (dbError) {
+        throw dbError;
       }
-
+  
       toast({
         title: "Success",
         description: "Photo deleted successfully",
       });
-
+  
       fetchPhotos();
     } catch (error) {
       console.error("Error deleting photo:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to delete photo";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to delete photo";
       toast({
         variant: "destructive",
         title: "Delete failed",
         description: errorMessage,
       });
     }
-  };
+  };  
 
   // Group photos by month
   const groupedPhotos = photos.reduce((acc, photo) => {
@@ -304,8 +316,8 @@ export default function ProgressPhotos() {
                       {monthPhotos.map((photo) => (
                         <div key={photo.id} className="space-y-2">
                           <div className="relative aspect-square rounded-lg overflow-hidden border bg-muted">
-                            <img
-                              src={photo.photo_url}
+                          <img
+                              src={signedUrls[photo.id]}
                               alt={`Progress photo from ${format(parseISO(photo.photo_date), "MMM d, yyyy")}`}
                               className="w-full h-full object-cover"
                             />
