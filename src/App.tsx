@@ -38,10 +38,10 @@ const App = () => (
             
             {/* Client Routes */}
             <Route path="/client" element={<ProtectedRoute allowedRoles={["client"]}><ClientDashboard /></ProtectedRoute>} />
+            <Route path="/client/workouts" element={<ProtectedRoute allowedRoles={["client"]}><WorkoutPlans /></ProtectedRoute>} />
+            <Route path="/client/diets" element={<ProtectedRoute allowedRoles={["client"]}><DietPlans /></ProtectedRoute>} />
+            <Route path="/client/progress-photos" element={<ProtectedRoute allowedRoles={["client"]}><ProgressPhotos /></ProtectedRoute>} />
             <Route path="/client/attendance" element={<ProtectedRoute allowedRoles={["client"]}><AttendanceHistory /></ProtectedRoute>} />
-            <Route path="/client/workout" element={<ProtectedRoute allowedRoles={["client"]}><WorkoutPlans /></ProtectedRoute>} />
-            <Route path="/client/diet" element={<ProtectedRoute allowedRoles={["client"]}><DietPlans /></ProtectedRoute>} />
-            <Route path="/client/progress" element={<ProtectedRoute allowedRoles={["client"]}><ProgressPhotos /></ProtectedRoute>} />
             
             {/* Coach Routes */}
             <Route path="/coach" element={<ProtectedRoute allowedRoles={["coach"]}><CoachDashboard /></ProtectedRoute>} />
