@@ -204,12 +204,26 @@ export default function CreateWorkoutPlan() {
     setIsLoading(true);
 
     try {
+      // Get next version number (needed before PDF upload for folder structure)
+      const { data: existingPlans } = await supabase
+        .from("workout_plans")
+        .select("version")
+        .eq("coach_id", user.id)
+        .eq("client_id", selectedClientId)
+        .order("version", { ascending: false })
+        .limit(1);
+
+      const nextVersion = existingPlans && existingPlans.length > 0 && existingPlans[0].version
+        ? existingPlans[0].version + 1
+        : 1;
+
       let pdfUrl: string | null = null;
 
       // Upload PDF if needed
+      // Folder structure: plan-pdfs/{coachId}/{clientId}/{planType}/{version}/{filename}
       if (planType === "pdf" && pdfFile) {
         const fileExt = pdfFile.name.split(".").pop();
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        const fileName = `${user.id}/${selectedClientId}/workout/${nextVersion}/${Date.now()}.${fileExt}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("plan-pdfs")
@@ -225,19 +239,6 @@ export default function CreateWorkoutPlan() {
         const { data: urlData } = supabase.storage.from("plan-pdfs").getPublicUrl(fileName);
         pdfUrl = urlData.publicUrl;
       }
-
-      // Get next version number
-      const { data: existingPlans } = await supabase
-        .from("workout_plans")
-        .select("version")
-        .eq("coach_id", user.id)
-        .eq("client_id", selectedClientId)
-        .order("version", { ascending: false })
-        .limit(1);
-
-      const nextVersion = existingPlans && existingPlans.length > 0 && existingPlans[0].version
-        ? existingPlans[0].version + 1
-        : 1;
 
       // Deactivate previous active plan
       await supabase

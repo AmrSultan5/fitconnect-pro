@@ -48,12 +48,6 @@ export default function CreateDietPlan() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingClients, setIsLoadingClients] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      fetchClients();
-    }
-  }, [user]);
-
   const fetchClients = useCallback(async () => {
     if (!user) return;
     setIsLoadingClients(true);
@@ -87,6 +81,12 @@ export default function CreateDietPlan() {
     }
     setIsLoadingClients(false);
   }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchClients();
+    }
+  }, [user, fetchClients]);
 
   const addMeal = () => {
     setMeals([
@@ -199,12 +199,26 @@ export default function CreateDietPlan() {
     setIsLoading(true);
 
     try {
+      // Get next version number (needed before PDF upload for folder structure)
+      const { data: existingPlans } = await supabase
+        .from("diet_plans")
+        .select("version")
+        .eq("coach_id", user.id)
+        .eq("client_id", selectedClientId)
+        .order("version", { ascending: false })
+        .limit(1);
+
+      const nextVersion = existingPlans && existingPlans.length > 0 && existingPlans[0].version
+        ? existingPlans[0].version + 1
+        : 1;
+
       let pdfUrl: string | null = null;
 
       // Upload PDF if needed
+      // Folder structure: plan-pdfs/{coachId}/{clientId}/{planType}/{version}/{filename}
       if (planType === "pdf" && pdfFile) {
         const fileExt = pdfFile.name.split(".").pop();
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        const fileName = `${user.id}/${selectedClientId}/diet/${nextVersion}/${Date.now()}.${fileExt}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("plan-pdfs")
@@ -220,19 +234,6 @@ export default function CreateDietPlan() {
         const { data: urlData } = supabase.storage.from("plan-pdfs").getPublicUrl(fileName);
         pdfUrl = urlData.publicUrl;
       }
-
-      // Get next version number
-      const { data: existingPlans } = await supabase
-        .from("diet_plans")
-        .select("version")
-        .eq("coach_id", user.id)
-        .eq("client_id", selectedClientId)
-        .order("version", { ascending: false })
-        .limit(1);
-
-      const nextVersion = existingPlans && existingPlans.length > 0 && existingPlans[0].version
-        ? existingPlans[0].version + 1
-        : 1;
 
       // Deactivate previous active plan
       await supabase

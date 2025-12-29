@@ -88,9 +88,11 @@ export default function ProgressPhotos() {
     setIsUploading(true);
 
     try {
-      // Upload to Supabase Storage (bucket will be created in step 4)
+      // Upload to Supabase Storage
+      // Folder structure: progress-photos/{clientId}/{yyyy-mm-dd}/{filename}
       const fileExt = uploadFile.name.split(".").pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      const dateFolder = format(parseISO(uploadDate), "yyyy-MM-dd");
+      const fileName = `${user.id}/${dateFolder}/${Date.now()}.${fileExt}`;
 
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("progress-photos")
