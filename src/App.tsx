@@ -8,7 +8,16 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 import Auth from "./pages/Auth";
 import ClientDashboard from "./pages/client/ClientDashboard";
+import AttendanceHistory from "./pages/client/AttendanceHistory";
+import WorkoutPlans from "./pages/client/WorkoutPlans";
+import DietPlans from "./pages/client/DietPlans";
+import ProgressPhotos from "./pages/client/ProgressPhotos";
 import CoachDashboard from "./pages/coach/CoachDashboard";
+import ClientDetailPage from "./pages/coach/ClientDetailPage";
+import WorkoutPlansPage from "./pages/coach/WorkoutPlansPage";
+import CreateWorkoutPlan from "./pages/coach/CreateWorkoutPlan";
+import DietPlansPage from "./pages/coach/DietPlansPage";
+import CreateDietPlan from "./pages/coach/CreateDietPlan";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import CoachMarketplace from "./pages/coaches/CoachMarketplace";
 import CoachProfilePage from "./pages/coaches/CoachProfilePage";
@@ -29,17 +38,19 @@ const App = () => (
             
             {/* Client Routes */}
             <Route path="/client" element={<ProtectedRoute allowedRoles={["client"]}><ClientDashboard /></ProtectedRoute>} />
-            <Route path="/client/attendance" element={<ProtectedRoute allowedRoles={["client"]}><ClientDashboard /></ProtectedRoute>} />
-            <Route path="/client/workout" element={<ProtectedRoute allowedRoles={["client"]}><ClientDashboard /></ProtectedRoute>} />
-            <Route path="/client/diet" element={<ProtectedRoute allowedRoles={["client"]}><ClientDashboard /></ProtectedRoute>} />
-            <Route path="/client/progress" element={<ProtectedRoute allowedRoles={["client"]}><ClientDashboard /></ProtectedRoute>} />
+            <Route path="/client/attendance" element={<ProtectedRoute allowedRoles={["client"]}><AttendanceHistory /></ProtectedRoute>} />
+            <Route path="/client/workout" element={<ProtectedRoute allowedRoles={["client"]}><WorkoutPlans /></ProtectedRoute>} />
+            <Route path="/client/diet" element={<ProtectedRoute allowedRoles={["client"]}><DietPlans /></ProtectedRoute>} />
+            <Route path="/client/progress" element={<ProtectedRoute allowedRoles={["client"]}><ProgressPhotos /></ProtectedRoute>} />
             
             {/* Coach Routes */}
             <Route path="/coach" element={<ProtectedRoute allowedRoles={["coach"]}><CoachDashboard /></ProtectedRoute>} />
             <Route path="/coach/clients" element={<ProtectedRoute allowedRoles={["coach"]}><CoachDashboard /></ProtectedRoute>} />
-            <Route path="/coach/clients/:clientId" element={<ProtectedRoute allowedRoles={["coach"]}><CoachDashboard /></ProtectedRoute>} />
-            <Route path="/coach/workouts" element={<ProtectedRoute allowedRoles={["coach"]}><CoachDashboard /></ProtectedRoute>} />
-            <Route path="/coach/diets" element={<ProtectedRoute allowedRoles={["coach"]}><CoachDashboard /></ProtectedRoute>} />
+            <Route path="/coach/clients/:clientId" element={<ProtectedRoute allowedRoles={["coach"]}><ClientDetailPage /></ProtectedRoute>} />
+            <Route path="/coach/workouts" element={<ProtectedRoute allowedRoles={["coach"]}><WorkoutPlansPage /></ProtectedRoute>} />
+            <Route path="/coach/workouts/new" element={<ProtectedRoute allowedRoles={["coach"]}><CreateWorkoutPlan /></ProtectedRoute>} />
+            <Route path="/coach/diets" element={<ProtectedRoute allowedRoles={["coach"]}><DietPlansPage /></ProtectedRoute>} />
+            <Route path="/coach/diets/new" element={<ProtectedRoute allowedRoles={["coach"]}><CreateDietPlan /></ProtectedRoute>} />
             
             {/* Admin Routes */}
             <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
