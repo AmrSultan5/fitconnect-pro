@@ -37,9 +37,9 @@ interface NavItem {
 const clientNav: NavItem[] = [
   { title: "Dashboard", href: "/client", icon: LayoutDashboard },
   { title: "Attendance", href: "/client/attendance", icon: Calendar },
-  { title: "Workout Plan", href: "/client/workout", icon: ClipboardList },
-  { title: "Diet Plan", href: "/client/diet", icon: Utensils },
-  { title: "Progress Photos", href: "/client/progress", icon: Image },
+  { title: "Workout Plan", href: "/client/workouts", icon: ClipboardList },
+  { title: "Diet Plan", href: "/client/diets", icon: Utensils },
+  { title: "Progress Photos", href: "/client/progress-photos", icon: Image },
   { title: "Find a Coach", href: "/coaches", icon: Store },
 ];
 
