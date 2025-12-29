@@ -68,19 +68,28 @@ export default function WorkoutPlans() {
   }, [user]);
 
   const handleViewPdf = async (pdfPath: string) => {
-    console.log("PDF PATH USED:", pdfPath);
+    // 1️⃣ Open tab immediately (user gesture)
+    const newTab = window.open("", "_blank");
   
+    if (!newTab) {
+      alert("Please allow popups to view the PDF");
+      return;
+    }
+  
+    // 2️⃣ Create signed URL
     const { data, error } = await supabase.storage
       .from("plan-pdfs")
-      .createSignedUrl(pdfPath, 60); // 60 seconds
+      .createSignedUrl(pdfPath, 60);
   
-    if (error) {
+    if (error || !data?.signedUrl) {
+      newTab.close();
       console.error("Failed to create signed URL:", error);
       return;
     }
   
-    window.open(data.signedUrl, "_blank");
-  };
+    // 3️⃣ Navigate the already-open tab
+    newTab.location.href = data.signedUrl;
+  };  
   
 
   useEffect(() => {
