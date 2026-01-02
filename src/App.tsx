@@ -12,6 +12,7 @@ import AttendanceHistory from "./pages/client/AttendanceHistory";
 import WorkoutPlans from "./pages/client/WorkoutPlans";
 import DietPlans from "./pages/client/DietPlans";
 import ProgressPhotos from "./pages/client/ProgressPhotos";
+import CoachPage from "./pages/client/CoachPage";
 import CoachDashboard from "./pages/coach/CoachDashboard";
 import ClientDetailPage from "./pages/coach/ClientDetailPage";
 import WorkoutPlansPage from "./pages/coach/WorkoutPlansPage";
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/client/diets" element={<ProtectedRoute allowedRoles={["client"]}><DietPlans /></ProtectedRoute>} />
             <Route path="/client/progress-photos" element={<ProtectedRoute allowedRoles={["client"]}><ProgressPhotos /></ProtectedRoute>} />
             <Route path="/client/attendance" element={<ProtectedRoute allowedRoles={["client"]}><AttendanceHistory /></ProtectedRoute>} />
+            <Route path="/client/coach" element={<ProtectedRoute allowedRoles={["client"]}><CoachPage /></ProtectedRoute>} />
             
             {/* Coach Routes */}
             <Route path="/coach" element={<ProtectedRoute allowedRoles={["coach"]}><CoachDashboard /></ProtectedRoute>} />

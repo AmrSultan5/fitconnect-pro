@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -25,8 +25,10 @@ import {
   Menu,
   User,
   Shield,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NavItem {
   title: string;
@@ -34,14 +36,23 @@ interface NavItem {
   icon: React.ElementType;
 }
 
-const clientNav: NavItem[] = [
-  { title: "Dashboard", href: "/client", icon: LayoutDashboard },
-  { title: "Attendance", href: "/client/attendance", icon: Calendar },
-  { title: "Workout Plan", href: "/client/workouts", icon: ClipboardList },
-  { title: "Diet Plan", href: "/client/diets", icon: Utensils },
-  { title: "Progress Photos", href: "/client/progress-photos", icon: Image },
-  { title: "Find a Coach", href: "/coaches", icon: Store },
-];
+const getClientNav = (coachName: string | null): NavItem[] => {
+  const baseNav: NavItem[] = [
+    { title: "Dashboard", href: "/client", icon: LayoutDashboard },
+    { title: "Attendance", href: "/client/attendance", icon: Calendar },
+    { title: "Workout Plan", href: "/client/workouts", icon: ClipboardList },
+    { title: "Diet Plan", href: "/client/diets", icon: Utensils },
+    { title: "Progress Photos", href: "/client/progress-photos", icon: Image },
+  ];
+
+  if (coachName) {
+    baseNav.push({ title: coachName, href: "/client/coach", icon: MessageSquare });
+  } else {
+    baseNav.push({ title: "Find a Coach", href: "/coaches", icon: Store });
+  }
+
+  return baseNav;
+};
 
 const coachNav: NavItem[] = [
   { title: "Dashboard", href: "/coach", icon: LayoutDashboard },
@@ -64,8 +75,49 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [coachName, setCoachName] = useState<string | null>(null);
 
-  const navItems = role === "admin" ? adminNav : role === "coach" ? coachNav : clientNav;
+  const fetchCoachName = useCallback(async () => {
+    if (!user || role !== "client") {
+      setCoachName(null);
+      return;
+    }
+
+    const { data: assignment } = await supabase
+      .from("coach_client_assignments")
+      .select("coach_id")
+      .eq("client_id", user.id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (assignment) {
+      const { data: coachProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", assignment.coach_id)
+        .maybeSingle();
+      
+      if (coachProfile?.full_name) {
+        // Format as "Coach [FirstName]" or just first name if available
+        const firstName = coachProfile.full_name.split(" ")[0];
+        setCoachName(`Coach ${firstName}`);
+      } else {
+        setCoachName("My Coach");
+      }
+    } else {
+      setCoachName(null);
+    }
+  }, [user, role]);
+
+  useEffect(() => {
+    fetchCoachName();
+  }, [fetchCoachName, location.pathname]); // Refetch when navigating between pages
+
+  const navItems = role === "admin" 
+    ? adminNav 
+    : role === "coach" 
+    ? coachNav 
+    : getClientNav(coachName);
 
   const handleSignOut = async () => {
     await signOut();

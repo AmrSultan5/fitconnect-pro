@@ -19,7 +19,13 @@ export default function CoachMarketplace() {
   const [currentCoach, setCurrentCoach] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => { fetchCoaches(); if (user && role === "client") checkCurrentCoach(); }, [user, role]);
+  useEffect(() => {
+    fetchCoaches();
+    if (user && role === "client") {
+      setCurrentCoach(null); // 👈 RESET FIRST
+      checkCurrentCoach();   // 👈 THEN REFETCH
+    }
+  }, [user, role]);  
 
   const fetchCoaches = async () => {
     const { data } = await supabase.from("coach_profiles").select("user_id, bio, specialties, experience_years").eq("is_active", true).eq("is_approved", true);
@@ -39,14 +45,69 @@ export default function CoachMarketplace() {
   };
 
   const joinCoach = async (coachId: string) => {
-    if (!user) return;
+    if (!user || isLoading) return;
+  
     setIsLoading(true);
-    await supabase.from("coach_client_assignments").update({ is_active: false }).eq("client_id", user.id);
-    const { error } = await supabase.from("coach_client_assignments").insert({ coach_id: coachId, client_id: user.id, is_active: true });
-    setIsLoading(false);
-    if (error) toast({ variant: "destructive", title: "Error", description: "Failed to join." });
-    else { setCurrentCoach(coachId); toast({ title: "Welcome!", description: "You've joined the program." }); }
-  };
+  
+    try {
+      // 1️⃣ Deactivate current active coach (if any)
+      const { error: deactivateError } = await supabase
+        .from("coach_client_assignments")
+        .update({ is_active: false })
+        .eq("client_id", user.id)
+        .eq("is_active", true);
+  
+      if (deactivateError) throw deactivateError;
+  
+      // 2️⃣ Check if this coach was assigned before
+      const { data: existingAssignment, error: checkError } = await supabase
+        .from("coach_client_assignments")
+        .select("id")
+        .eq("client_id", user.id)
+        .eq("coach_id", coachId)
+        .maybeSingle();
+  
+      if (checkError) throw checkError;
+  
+      if (existingAssignment) {
+        // 3️⃣ Reactivate existing row
+        const { error: reactivateError } = await supabase
+          .from("coach_client_assignments")
+          .update({ is_active: true })
+          .eq("id", existingAssignment.id);
+  
+        if (reactivateError) throw reactivateError;
+      } else {
+        // 4️⃣ Insert new assignment
+        const { error: insertError } = await supabase
+          .from("coach_client_assignments")
+          .insert({
+            client_id: user.id,
+            coach_id: coachId,
+            is_active: true,
+          });
+  
+        if (insertError) throw insertError;
+      }
+  
+      // 5️⃣ Update UI
+      setCurrentCoach(coachId);
+  
+      toast({
+        title: "Welcome!",
+        description: "You've joined the program.",
+      });
+    } catch (err) {
+      console.error(err);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to join coach.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };  
 
   return (
     <DashboardLayout>

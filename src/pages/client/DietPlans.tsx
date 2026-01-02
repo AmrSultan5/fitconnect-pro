@@ -72,6 +72,30 @@ export default function DietPlans() {
     setIsLoading(false);
   }, [user]);
 
+  const handleViewPdf = async (pdfPath: string) => {
+    // 1️⃣ Open tab immediately (required for iOS)
+    const newTab = window.open("", "_blank");
+  
+    if (!newTab) {
+      alert("Please allow popups to view the PDF");
+      return;
+    }
+  
+    // 2️⃣ Create signed URL
+    const { data, error } = await supabase.storage
+      .from("plan-pdfs")
+      .createSignedUrl(pdfPath, 60);
+  
+    if (error || !data?.signedUrl) {
+      newTab.close();
+      console.error("Failed to create signed URL:", error);
+      return;
+    }
+  
+    // 3️⃣ Navigate opened tab
+    newTab.location.href = data.signedUrl;
+  };  
+
   useEffect(() => {
     if (user) {
       fetchPlans();
@@ -215,11 +239,12 @@ export default function DietPlans() {
                         <FileText className="h-4 w-4" />
                         PDF Plan
                       </div>
-                      <Button asChild variant="outline" className="w-full sm:w-auto">
-                        <a href={activePlan.pdf_url} target="_blank" rel="noopener noreferrer">
-                          <Download className="mr-2 h-4 w-4" />
-                          View PDF
-                        </a>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleViewPdf(activePlan.pdf_url!)}
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        View PDF
                       </Button>
                     </div>
                   ) : (
@@ -267,11 +292,13 @@ export default function DietPlans() {
                         </div>
                         {plan.plan_type === "pdf" && plan.pdf_url && (
                           <div className="mt-3">
-                            <Button asChild variant="outline" size="sm">
-                              <a href={plan.pdf_url} target="_blank" rel="noopener noreferrer">
-                                <Download className="mr-2 h-4 w-4" />
-                                View PDF
-                              </a>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewPdf(plan.pdf_url!)}
+                            >
+                              <Download className="mr-2 h-4 w-4" />
+                              View PDF
                             </Button>
                           </div>
                         )}

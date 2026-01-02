@@ -1,7 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -14,10 +25,26 @@ import {
   Flame,
   ClipboardList,
   Utensils,
-  User
+  User,
+  Save,
+  Edit,
+  MessageSquare,
+  ArrowRight,
+  UserCircle
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 type AttendanceStatus = "trained" | "rest" | "missed";
 
@@ -36,18 +63,124 @@ export default function ClientDashboard() {
   const [monthlyStats, setMonthlyStats] = useState({ trained: 0, rest: 0, missed: 0 });
   const [goal, setGoal] = useState<string | null>(null);
   const [coachName, setCoachName] = useState<string | null>(null);
+  const [coachId, setCoachId] = useState<string | null>(null);
+  const [coachSpecialties, setCoachSpecialties] = useState<string[] | null>(null);
+  const [coachAvatarUrl, setCoachAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingCoach, setIsLoadingCoach] = useState(false);
+  const navigate = useNavigate();
+  
+  // Profile editing state
+  const [profileData, setProfileData] = useState({
+    age: "",
+    height_cm: "",
+    weight_kg: "",
+    goal_type: "",
+    goal_notes: "",
+  });
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
-  const today = new Date();
-  const todayStr = format(today, "yyyy-MM-dd");
+  const today = useMemo(() => new Date(), []);
+  const todayStr = useMemo(() => format(today, "yyyy-MM-dd"), [today]);  
 
-  useEffect(() => {
-    if (user) {
-      fetchData();
+  const fetchCoachData = useCallback(async () => {
+    if (!user) return;
+  
+    setIsLoadingCoach(true);
+    try {
+      const { data: assignment, error } = await supabase
+        .from("coach_client_assignments")
+        .select("coach_id")
+        .eq("client_id", user.id)
+        .eq("is_active", true)
+        .maybeSingle();
+  
+      if (error) throw error;
+  
+      if (assignment) {
+        setCoachId(assignment.coach_id);
+  
+        const { data: coachProfile, error: profileError } = await supabase
+          .from("profiles")
+          .select("full_name, avatar_url")
+          .eq("user_id", assignment.coach_id)
+          .maybeSingle();
+  
+        if (profileError) throw profileError;
+  
+        if (coachProfile) {
+          setCoachName(coachProfile.full_name);
+          setCoachAvatarUrl(coachProfile.avatar_url);
+        }
+  
+        const { data: coachData, error: coachError } = await supabase
+          .from("coach_profiles")
+          .select("specialties")
+          .eq("user_id", assignment.coach_id)
+          .maybeSingle();
+  
+        if (coachError) throw coachError;
+  
+        if (coachData) {
+          setCoachSpecialties(coachData.specialties);
+        }
+      } else {
+        setCoachId(null);
+        setCoachName(null);
+        setCoachSpecialties(null);
+        setCoachAvatarUrl(null);
+      }
+    } catch (err) {
+      console.error("fetchCoachData failed:", err);
+    } finally {
+      setIsLoadingCoach(false);
     }
+  }, [user]);  
+
+  const fetchProfileData = useCallback(async () => {
+    if (!user) return;
+    
+    setIsLoadingProfile(true);
+    const { data: profileData } = await supabase
+      .from("client_profiles")
+      .select("age, height_cm, weight_kg, goal")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (profileData) {
+      // Parse goal - if it contains ":" assume format "Goal Type: [type]\nNotes: [notes]"
+      // Otherwise treat entire goal as goal_type
+      let goalType = "";
+      let goalNotes = "";
+      
+      if (profileData.goal) {
+        if (profileData.goal.includes("Goal Type:")) {
+          const lines = profileData.goal.split("\n");
+          const typeLine = lines.find(l => l.startsWith("Goal Type:"));
+          const notesLine = lines.find(l => l.startsWith("Notes:"));
+          if (typeLine) goalType = typeLine.replace("Goal Type:", "").trim();
+          if (notesLine) goalNotes = notesLine.replace("Notes:", "").trim();
+        } else {
+          // Legacy format - just text
+          goalType = profileData.goal;
+        }
+      }
+
+      setProfileData({
+        age: profileData.age?.toString() || "",
+        height_cm: profileData.height_cm?.toString() || "",
+        weight_kg: profileData.weight_kg?.toString() || "",
+        goal_type: goalType,
+        goal_notes: goalNotes,
+      });
+
+      setGoal(goalType || null);
+    }
+    setIsLoadingProfile(false);
   }, [user]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!user) return;
 
     const monthStart = format(startOfMonth(today), "yyyy-MM-dd");
@@ -75,30 +208,7 @@ export default function ClientDashboard() {
       setMonthlyStats(stats);
       calculateStreak(attendanceData as AttendanceRecord[]);
     }
-
-    const { data: profileData } = await supabase
-      .from("client_profiles")
-      .select("goal")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (profileData) setGoal(profileData.goal);
-
-    const { data: assignment } = await supabase
-      .from("coach_client_assignments")
-      .select("coach_id")
-      .eq("client_id", user.id)
-      .eq("is_active", true)
-      .maybeSingle();
-
-    if (assignment) {
-      const { data: coachProfile } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("user_id", assignment.coach_id)
-        .maybeSingle();
-      if (coachProfile) setCoachName(coachProfile.full_name);
-    }
-  };
+  }, [user, todayStr]);
 
   const calculateStreak = (records: AttendanceRecord[]) => {
     let currentStreak = 0;
@@ -128,8 +238,115 @@ export default function ClientDashboard() {
     }
   };
 
+  const handleChangeCoach = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      // Deactivate current coach assignment
+      const { error } = await supabase
+        .from("coach_client_assignments")
+        .update({ is_active: false })
+        .eq("client_id", user.id)
+        .eq("is_active", true);
+
+      if (error) {
+        throw error;
+      }
+
+      // Clear coach data
+      setCoachId(null);
+      setCoachName(null);
+      setCoachSpecialties(null);
+      setCoachAvatarUrl(null);
+
+      toast({
+        title: "Coach removed",
+        description: "You can now select a new coach from the marketplace.",
+      });
+
+      // Redirect to marketplace
+      navigate("/coaches");
+    } catch (error) {
+      console.error("Error changing coach:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to change coach. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+
+    setIsSavingProfile(true);
+
+    try {
+      // Format goal with type and notes
+      let goalValue = "";
+      if (profileData.goal_type) {
+        goalValue = `Goal Type: ${profileData.goal_type}`;
+        if (profileData.goal_notes) {
+          goalValue += `\nNotes: ${profileData.goal_notes}`;
+        }
+      }
+
+      // Update client_profiles
+      const { error: updateError } = await supabase
+        .from("client_profiles")
+        .upsert({
+          user_id: user.id,
+          age: profileData.age ? parseInt(profileData.age) : null,
+          height_cm: profileData.height_cm ? parseFloat(profileData.height_cm) : null,
+          weight_kg: profileData.weight_kg ? parseFloat(profileData.weight_kg) : null,
+          goal: goalValue || null,
+        }, { onConflict: "user_id" });
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Update local goal state for display
+      setGoal(profileData.goal_type || null);
+
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      });
+
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to save profile";
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: errorMessage,
+      });
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
   const daysInMonth = eachDayOfInterval({ start: startOfMonth(today), end: endOfMonth(today) });
   const getStatusForDay = (day: Date) => attendance.find(a => a.date === format(day, "yyyy-MM-dd"))?.status;
+
+// Coach data – once
+useEffect(() => {
+  if (user) fetchCoachData();
+}, [user, fetchCoachData]);
+
+// Profile – once
+useEffect(() => {
+  if (user) fetchProfileData();
+}, [user, fetchProfileData]);
+
+// Attendance – month-based
+useEffect(() => {
+  if (user) fetchData();
+}, [user, fetchData]); 
 
   return (
     <DashboardLayout>
@@ -174,11 +391,219 @@ export default function ClientDashboard() {
           <Card>
             <CardHeader><CardTitle>Your Journey</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              {coachName ? <div className="flex items-center gap-4 rounded-lg bg-secondary/50 p-4"><User className="h-5 w-5"/><div><p className="text-sm text-muted-foreground">Coach</p><p className="font-medium">{coachName}</p></div></div> : <Link to="/coaches" className="flex items-center gap-4 rounded-lg border-2 border-dashed p-4 hover:border-primary"><User className="h-5 w-5 text-muted-foreground"/><div><p className="font-medium">Find a Coach</p></div></Link>}
               {goal && <div className="rounded-lg bg-muted/50 p-4"><p className="text-sm text-muted-foreground">Goal</p><p className="font-medium">{goal}</p></div>}
             </CardContent>
           </Card>
         </div>
+
+        {/* Your Coach Section */}
+        {isLoadingCoach ? (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center py-8 text-muted-foreground">Loading coach information...</div>
+            </CardContent>
+          </Card>
+        ) : coachId ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserCircle className="h-5 w-5" />
+                Your Coach
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-start gap-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={coachAvatarUrl || undefined} alt={coachName || "Coach"} />
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xl font-semibold">
+                    {coachName?.split(" ").map(n => n[0]).join("").toUpperCase() || "C"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 space-y-2">
+                  <div>
+                  <p className="font-semibold text-lg">
+                    {coachName || "Your Coach"}
+                  </p>
+                    {coachSpecialties && coachSpecialties.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {coachSpecialties.slice(0, 3).map((specialty, idx) => (
+                          <span key={idx} className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded">
+                            {specialty}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => navigate(`/coaches/${coachId}`)}
+                      className="flex-1"
+                    >
+                      View Coach Profile
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => navigate("/client/coach")}
+                      className="flex-1"
+                    >
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Chat
+                    </Button>
+                    <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" disabled={isLoading}>
+                        Change Coach
+                      </Button>
+                    </AlertDialogTrigger>
+
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Change Coach?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will remove your current coach and you'll need to select a new one.
+                          You will lose access to the current coach chat.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleChangeCoach}>
+                          Yes, change coach
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Find a Coach
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Link to="/coaches" className="flex items-center gap-4 rounded-lg border-2 border-dashed p-4 hover:border-primary transition-colors">
+                <User className="h-5 w-5 text-muted-foreground" />
+                <div className="flex-1">
+                  <p className="font-medium">Find a Coach</p>
+                  <p className="text-sm text-muted-foreground">Browse certified coaches to get started</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              </Link>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Profile & Goals Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5" />
+              Profile & Goals
+            </CardTitle>
+            <CardDescription>Update your profile information and fitness goals</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isLoadingProfile && !profileData.age ? (
+              <div className="text-center py-8 text-muted-foreground">Loading profile...</div>
+            ) : (
+              <>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="age">Age</Label>
+                    <Input
+                      id="age"
+                      type="number"
+                      min="1"
+                      max="120"
+                      value={profileData.age}
+                      onChange={(e) => setProfileData({ ...profileData, age: e.target.value })}
+                      placeholder="Enter your age"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="height">Height (cm)</Label>
+                    <Input
+                      id="height"
+                      type="number"
+                      min="50"
+                      max="250"
+                      step="0.1"
+                      value={profileData.height_cm}
+                      onChange={(e) => setProfileData({ ...profileData, height_cm: e.target.value })}
+                      placeholder="e.g., 180"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="weight">Weight (kg)</Label>
+                    <Input
+                      id="weight"
+                      type="number"
+                      min="20"
+                      max="300"
+                      step="0.1"
+                      value={profileData.weight_kg}
+                      onChange={(e) => setProfileData({ ...profileData, weight_kg: e.target.value })}
+                      placeholder="e.g., 75"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4 border-t pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="goal_type">Fitness Goal</Label>
+                    <Select
+                      value={profileData.goal_type}
+                      onValueChange={(value) => setProfileData({ ...profileData, goal_type: value })}
+                    >
+                      <SelectTrigger id="goal_type">
+                        <SelectValue placeholder="Select your goal" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Fat Loss">Fat Loss</SelectItem>
+                        <SelectItem value="Muscle Gain">Muscle Gain</SelectItem>
+                        <SelectItem value="Maintenance">Maintenance</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="goal_notes">Goal Notes (Optional)</Label>
+                    <Textarea
+                      id="goal_notes"
+                      value={profileData.goal_notes}
+                      onChange={(e) => setProfileData({ ...profileData, goal_notes: e.target.value })}
+                      placeholder="Add any additional details about your fitness goals..."
+                      className="min-h-[100px]"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <Button onClick={handleSaveProfile} disabled={isSavingProfile}>
+                    {isSavingProfile ? (
+                      <>
+                        <Save className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Profile
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );
