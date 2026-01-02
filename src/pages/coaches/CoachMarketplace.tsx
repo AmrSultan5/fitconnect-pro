@@ -50,47 +50,29 @@ export default function CoachMarketplace() {
     setIsLoading(true);
   
     try {
-      // 1️⃣ Deactivate current active coach (if any)
-      const { error: deactivateError } = await supabase
+      // 1️⃣ Deactivate any active assignment
+      await supabase
         .from("coach_client_assignments")
         .update({ is_active: false })
         .eq("client_id", user.id)
         .eq("is_active", true);
   
-      if (deactivateError) throw deactivateError;
-  
-      // 2️⃣ Check if this coach was assigned before
-      const { data: existingAssignment, error: checkError } = await supabase
+      // 2️⃣ Reactivate OR insert
+      const { error } = await supabase
         .from("coach_client_assignments")
-        .select("id")
-        .eq("client_id", user.id)
-        .eq("coach_id", coachId)
-        .maybeSingle();
-  
-      if (checkError) throw checkError;
-  
-      if (existingAssignment) {
-        // 3️⃣ Reactivate existing row
-        const { error: reactivateError } = await supabase
-          .from("coach_client_assignments")
-          .update({ is_active: true })
-          .eq("id", existingAssignment.id);
-  
-        if (reactivateError) throw reactivateError;
-      } else {
-        // 4️⃣ Insert new assignment
-        const { error: insertError } = await supabase
-          .from("coach_client_assignments")
-          .insert({
+        .upsert(
+          {
             client_id: user.id,
             coach_id: coachId,
             is_active: true,
-          });
+          },
+          {
+            onConflict: "client_id,coach_id",
+          }
+        );
   
-        if (insertError) throw insertError;
-      }
+      if (error) throw error;
   
-      // 5️⃣ Update UI
       setCurrentCoach(coachId);
   
       toast({
@@ -123,7 +105,17 @@ export default function CoachMarketplace() {
                   <CardContent className="pt-6 space-y-4">
                     <div className="flex items-start gap-4">
                       <Avatar className="h-14 w-14"><AvatarFallback className="bg-primary text-primary-foreground text-lg">{initials}</AvatarFallback></Avatar>
-                      <div className="flex-1"><p className="font-semibold flex items-center gap-2">{c.full_name || "Coach"}{isCurrent && <Badge><Check className="mr-1 h-3 w-3"/>Your Coach</Badge>}</p><p className="text-sm text-muted-foreground flex items-center gap-1"><Star className="h-3 w-3 fill-warning text-warning"/>{c.experience_years || 0} yrs</p></div>
+                      <div className="flex-1"><div className="flex items-center gap-2 font-semibold">
+                        <span>{c.full_name || "Coach"}</span>
+
+                        {isCurrent && (
+                          <Badge className="flex items-center gap-1">
+                            <Check className="h-3 w-3" />
+                            Your Coach
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1"><Star className="h-3 w-3 fill-warning text-warning"/>{c.experience_years || 0} yrs</p></div>
                     </div>
                     {c.bio && <p className="text-sm text-muted-foreground line-clamp-2">{c.bio}</p>}
                     {c.specialties && c.specialties.length > 0 && <div className="flex flex-wrap gap-1">{c.specialties.slice(0, 3).map((s, i) => <Badge key={i} variant="secondary" className="text-xs">{s}</Badge>)}</div>}
