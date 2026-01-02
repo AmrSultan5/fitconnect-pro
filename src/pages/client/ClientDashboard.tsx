@@ -406,26 +406,26 @@ useEffect(() => {
         ) : coachId ? (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center justify-center sm:justify-start gap-2 text-center sm:text-left">
                 <UserCircle className="h-5 w-5" />
                 Your Coach
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-start gap-4">
-                <Avatar className="h-16 w-16">
+            <CardContent className="pt-4">
+            <div className="flex flex-col items-center sm:flex-row sm:items-start gap-4 text-center sm:text-left">
+            <Avatar className="h-14 w-14 sm:h-16 sm:w-16 mx-auto sm:mx-0">
                   <AvatarImage src={coachAvatarUrl || undefined} alt={coachName || "Coach"} />
                   <AvatarFallback className="bg-primary text-primary-foreground text-xl font-semibold">
                     {coachName?.split(" ").map(n => n[0]).join("").toUpperCase() || "C"}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 space-y-2">
+                <div className="flex-1 space-y-2 text-center sm:text-left">
                   <div>
                   <p className="font-semibold text-lg">
                     {coachName || "Your Coach"}
                   </p>
                     {coachSpecialties && coachSpecialties.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
+                      <div className="flex flex-wrap gap-1 mt-2 justify-center sm:justify-start">
                         {coachSpecialties.slice(0, 3).map((specialty, idx) => (
                           <span key={idx} className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded">
                             {specialty}
@@ -434,25 +434,25 @@ useEffect(() => {
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex flex-col sm:flex-row gap-2 pt-3">
                     <Button 
                       variant="outline" 
                       onClick={() => navigate(`/coaches/${coachId}`)}
-                      className="flex-1"
+                      className="w-full sm:flex-1"
                     >
                       View Coach Profile
                     </Button>
                     <Button 
                       variant="outline" 
                       onClick={() => navigate("/client/coach")}
-                      className="flex-1"
+                      className="w-full sm:flex-1"
                     >
                       <MessageSquare className="mr-2 h-4 w-4" />
                       Chat
                     </Button>
                     <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" disabled={isLoading}>
+                      <Button variant="ghost" className="w-full sm:w-auto" disabled={isLoading}>
                         Change Coach
                       </Button>
                     </AlertDialogTrigger>
@@ -482,7 +482,7 @@ useEffect(() => {
         ) : (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center justify-center sm:justify-start gap-2 text-center sm:text-left">
                 <User className="h-5 w-5" />
                 Find a Coach
               </CardTitle>
@@ -503,7 +503,7 @@ useEffect(() => {
         {/* Profile & Goals Section */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center justify-center sm:justify-start gap-2 text-center sm:text-left">
               <Edit className="h-5 w-5" />
               Profile & Goals
             </CardTitle>
