@@ -54,6 +54,54 @@ interface AttendanceRecord {
   status: AttendanceStatus;
 }
 
+function StreakRing({
+  value,
+  maxDays,
+}: {
+  value: number;
+  maxDays: number;
+}) {
+  const percentage =
+    maxDays > 0 ? Math.min((value / maxDays) * 100, 100) : 0;
+
+  return (
+    <div className="relative w-36 h-36 drop-shadow-xl">
+      <svg className="w-full h-full rotate-[-90deg]">
+        <circle
+          cx="50%"
+          cy="50%"
+          r="45%"
+          stroke="hsl(var(--muted))"
+          strokeWidth="10%"
+          fill="none"
+          className="transition-all duration-700 ease-out"
+        />
+        <circle
+          cx="50%"
+          cy="50%"
+          r="45%"
+          stroke="hsl(var(--primary))"
+          strokeWidth="10%"
+          fill="none"
+          strokeDasharray="283"
+          strokeDashoffset={283 - (283 * percentage) / 100}
+          strokeLinecap="round"
+          className="transition-all duration-700 ease-out"
+        />
+      </svg>
+
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+      <span className="text-3xl font-bold">
+        {Math.round((value / maxDays) * 100)}%
+      </span>
+      <span className="text-xs rounded-full bg-primary/10 text-primary px-3 py-1 font-medium">
+        Month Progress
+      </span>
+    </div>
+    </div>
+  );
+}
+
 export default function ClientDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -68,6 +116,7 @@ export default function ClientDashboard() {
   const [coachAvatarUrl, setCoachAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingCoach, setIsLoadingCoach] = useState(false);
+  const [completedDays, setCompletedDays] = useState(0);
   const navigate = useNavigate();
   
   // Profile editing state
@@ -82,6 +131,9 @@ export default function ClientDashboard() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   const today = useMemo(() => new Date(), []);
+  const daysInCurrentMonth = useMemo(() => {
+    return endOfMonth(today).getDate(); // 28, 29, 30, or 31
+  }, [today]);  
   const todayStr = useMemo(() => format(today, "yyyy-MM-dd"), [today]);  
 
   const fetchCoachData = useCallback(async () => {
@@ -194,6 +246,12 @@ export default function ClientDashboard() {
       .lte("date", monthEnd)
       .order("date", { ascending: false });
 
+      const calculateCompletedDaysThisMonth = (records: AttendanceRecord[]) => {
+        return records.filter(
+          r => r.status === "trained" || r.status === "rest"
+        ).length;
+      }; 
+
     if (attendanceData) {
       setAttendance(attendanceData as AttendanceRecord[]);
       const todayRecord = attendanceData.find(a => a.date === todayStr);
@@ -207,6 +265,9 @@ export default function ClientDashboard() {
       });
       setMonthlyStats(stats);
       calculateStreak(attendanceData as AttendanceRecord[]);
+      setCompletedDays(
+        calculateCompletedDaysThisMonth(attendanceData as AttendanceRecord[])
+      );     
     }
   }, [user, todayStr]);
 
@@ -356,29 +417,54 @@ useEffect(() => {
           <p className="text-muted-foreground">{format(today, "EEEE, MMMM d, yyyy")}</p>
         </div>
 
-        <Card className="border-2 border-primary/20">
+        <Card className="bg-gradient-to-br from-primary/10 to-background border-primary/20 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Calendar className="h-5 w-5 text-primary" />Did you go to the gym today?</CardTitle>
             <CardDescription>{todayStatus ? `Logged: ${todayStatus}` : "Log your attendance"}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-3">
-              <Button onClick={() => logAttendance("trained")} disabled={isLoading} variant={todayStatus === "trained" ? "default" : "outline"} className="flex-1 min-w-[120px]"><CheckCircle2 className="mr-2 h-4 w-4" />Trained</Button>
-              <Button onClick={() => logAttendance("rest")} disabled={isLoading} variant={todayStatus === "rest" ? "secondary" : "outline"} className="flex-1 min-w-[120px]"><Moon className="mr-2 h-4 w-4" />Rest Day</Button>
-              <Button onClick={() => logAttendance("missed")} disabled={isLoading} variant={todayStatus === "missed" ? "destructive" : "outline"} className="flex-1 min-w-[120px]"><XCircle className="mr-2 h-4 w-4" />Missed</Button>
+              <Button onClick={() => logAttendance("trained")} disabled={isLoading} variant={todayStatus === "trained" ? "default" : "outline"} className="flex-1 min-w-[120px] shadow-sm hover:shadow-md transition"><CheckCircle2 className="mr-2 h-4 w-4" />Trained</Button>
+              <Button onClick={() => logAttendance("rest")} disabled={isLoading} variant={todayStatus === "rest" ? "secondary" : "outline"} className="flex-1 min-w-[120px] shadow-sm hover:shadow-md transition"><Moon className="mr-2 h-4 w-4" />Rest Day</Button>
+              <Button onClick={() => logAttendance("missed")} disabled={isLoading} variant={todayStatus === "missed" ? "destructive" : "outline"} className="flex-1 min-w-[120px] shadow-sm hover:shadow-md transition"><XCircle className="mr-2 h-4 w-4" />Missed</Button>
             </div>
           </CardContent>
         </Card>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card><CardContent className="pt-6"><div className="flex items-center gap-4"><div className="rounded-lg bg-success/10 p-3"><TrendingUp className="h-5 w-5 text-success" /></div><div><p className="text-sm text-muted-foreground">This Month</p><p className="text-2xl font-bold">{monthlyStats.trained} days</p></div></div></CardContent></Card>
-          <Card><CardContent className="pt-6"><div className="flex items-center gap-4"><div className="rounded-lg bg-warning/10 p-3"><Flame className="h-5 w-5 text-warning" /></div><div><p className="text-sm text-muted-foreground">Streak</p><p className="text-2xl font-bold">{streak} days</p></div></div></CardContent></Card>
-          <Card><CardContent className="pt-6"><Link to="/client/workouts" className="flex items-center gap-4"><div className="rounded-lg bg-primary/10 p-3"><ClipboardList className="h-5 w-5 text-primary" /></div><div><p className="text-sm text-muted-foreground">Workout</p><p className="text-sm font-medium text-primary">View →</p></div></Link></CardContent></Card>
-          <Card><CardContent className="pt-6"><Link to="/client/diets" className="flex items-center gap-4"><div className="rounded-lg bg-accent/10 p-3"><Utensils className="h-5 w-5 text-accent" /></div><div><p className="text-sm text-muted-foreground">Diet</p><p className="text-sm font-medium text-primary">View →</p></div></Link></CardContent></Card>
+        <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20">
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-4">
+            <div className="rounded-full bg-green-500/20 p-3">
+              <TrendingUp className="h-6 w-6 text-green-500" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Training Days</p>
+              <p className="text-3xl font-bold">{monthlyStats.trained}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border-orange-500/20">
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-4">
+            <div className="rounded-full bg-orange-500/20 p-3">
+              <Flame className="h-6 w-6 text-orange-500" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Current Streak</p>
+              <p className="text-3xl font-bold">{streak} 🔥</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+          <Card className="bg-gradient-to-br from-primary/5 to-background border-primary/20"><CardContent className="pt-6"><Link to="/client/workouts" className="flex items-center gap-4"><div className="rounded-lg bg-primary/10 p-3"><ClipboardList className="h-5 w-5 text-primary" /></div><div><p className="text-sm text-muted-foreground">Workout</p><p className="text-sm font-medium text-primary">View →</p></div></Link></CardContent></Card>
+          <Card className="bg-gradient-to-br from-primary/5 to-background border-primary/20"><CardContent className="pt-6"><Link to="/client/diets" className="flex items-center gap-4"><div className="rounded-lg bg-accent/10 p-3"><Utensils className="h-5 w-5 text-accent" /></div><div><p className="text-sm text-muted-foreground">Diet</p><p className="text-sm font-medium text-primary">View →</p></div></Link></CardContent></Card>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
+          <Card className="bg-gradient-to-br from-primary/5 to-background border-primary/20">
             <CardHeader><CardTitle>{format(today, "MMMM yyyy")}</CardTitle></CardHeader>
             <CardContent>
               <div className="grid grid-cols-7 gap-1 text-center text-xs">
@@ -388,23 +474,32 @@ useEffect(() => {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-gradient-to-br from-primary/5 to-background border-primary/20">
             <CardHeader><CardTitle>Your Journey</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              {goal && <div className="rounded-lg bg-muted/50 p-4"><p className="text-sm text-muted-foreground">Goal</p><p className="font-medium">{goal}</p></div>}
+            <div className="flex items-center justify-center py-6">
+              <StreakRing value={completedDays} maxDays={daysInCurrentMonth} />
+            </div>
+
+            {goal && (
+              <div className="rounded-xl bg-muted/50 p-4 text-center">
+                <p className="text-sm text-muted-foreground">Goal</p>
+                <p className="font-semibold text-lg">{goal}</p>
+              </div>
+            )}
             </CardContent>
           </Card>
         </div>
 
         {/* Your Coach Section */}
         {isLoadingCoach ? (
-          <Card>
+          <Card className="bg-gradient-to-br from-primary/5 to-background border-primary/20">
             <CardContent className="pt-6">
               <div className="text-center py-8 text-muted-foreground">Loading coach information...</div>
             </CardContent>
           </Card>
         ) : coachId ? (
-          <Card>
+          <Card className="bg-gradient-to-br from-primary/10 to-background border-primary/30 shadow-md">
             <CardHeader>
             <CardTitle className="flex items-center justify-center sm:justify-start gap-2 text-center sm:text-left">
                 <UserCircle className="h-5 w-5" />
@@ -413,7 +508,7 @@ useEffect(() => {
             </CardHeader>
             <CardContent className="pt-4">
             <div className="flex flex-col items-center sm:flex-row sm:items-start gap-4 text-center sm:text-left">
-            <Avatar className="h-14 w-14 sm:h-16 sm:w-16 mx-auto sm:mx-0">
+            <Avatar className="h-20 w-20 ring-4 ring-primary/20 shadow-lg">
                   <AvatarImage src={coachAvatarUrl || undefined} alt={coachName || "Coach"} />
                   <AvatarFallback className="bg-primary text-primary-foreground text-xl font-semibold">
                     {coachName?.split(" ").map(n => n[0]).join("").toUpperCase() || "C"}
@@ -421,7 +516,7 @@ useEffect(() => {
                 </Avatar>
                 <div className="flex-1 space-y-2 text-center sm:text-left">
                   <div>
-                  <p className="font-semibold text-lg">
+                  <p className="font-bold text-xl tracking-tight">
                     {coachName || "Your Coach"}
                   </p>
                     {coachSpecialties && coachSpecialties.length > 0 && (
@@ -452,7 +547,7 @@ useEffect(() => {
                     </Button>
                     <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" className="w-full sm:w-auto" disabled={isLoading}>
+                    <Button variant="outline" className="border-destructive/40 text-destructive hover:bg-destructive/10" disabled={isLoading}>
                         Change Coach
                       </Button>
                     </AlertDialogTrigger>
@@ -480,7 +575,7 @@ useEffect(() => {
             </CardContent>
           </Card>
         ) : (
-          <Card>
+          <Card className="bg-gradient-to-br from-primary/10 to-background border-primary/30 shadow-md">
             <CardHeader>
             <CardTitle className="flex items-center justify-center sm:justify-start gap-2 text-center sm:text-left">
                 <User className="h-5 w-5" />
@@ -501,7 +596,7 @@ useEffect(() => {
         )}
 
         {/* Profile & Goals Section */}
-        <Card>
+        <Card className="bg-gradient-to-br from-primary/5 to-background border-primary/20">
           <CardHeader>
           <CardTitle className="flex items-center justify-center sm:justify-start gap-2 text-center sm:text-left">
               <Edit className="h-5 w-5" />
