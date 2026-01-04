@@ -67,12 +67,17 @@ export default {
         },
       },
       borderRadius: {
+        xl: "calc(var(--radius) + 4px)",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        sans: ["Inter", "system-ui", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+      },
+      boxShadow: {
+        "soft": "0 2px 8px -2px hsl(var(--foreground) / 0.08), 0 4px 12px -4px hsl(var(--foreground) / 0.04)",
+        "soft-lg": "0 4px 16px -4px hsl(var(--foreground) / 0.12), 0 8px 24px -8px hsl(var(--foreground) / 0.08)",
       },
       keyframes: {
         "accordion-down": {
@@ -91,12 +96,17 @@ export default {
           from: { opacity: "0", transform: "translateY(10px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
+        "progress-fill": {
+          from: { strokeDashoffset: "var(--circumference)" },
+          to: { strokeDashoffset: "var(--offset)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.3s ease-out",
         "slide-up": "slide-up 0.4s ease-out",
+        "progress-fill": "progress-fill 1s ease-out forwards",
       },
     },
   },
