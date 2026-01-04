@@ -50,43 +50,54 @@ function StreakRing({
   value: number;
   maxDays: number;
 }) {
-  const percentage =
-    maxDays > 0 ? Math.min((value / maxDays) * 100, 100) : 0;
+  const percentage = maxDays > 0 ? Math.min((value / maxDays) * 100, 100) : 0;
+  const circumference = 2 * Math.PI * 58; // r=58 for a 144px container
+  const strokeDashoffset = percentage > 0 ? circumference - (circumference * percentage) / 100 : circumference;
 
   return (
-    <div className="relative w-36 h-36 drop-shadow-xl">
-      <svg className="w-full h-full rotate-[-90deg]">
+    <div className="relative w-40 h-40">
+      <svg className="w-full h-full -rotate-90" viewBox="0 0 144 144">
+        {/* Background track */}
         <circle
-          cx="50%"
-          cy="50%"
-          r="45%"
+          cx="72"
+          cy="72"
+          r="58"
+          fill="none"
           stroke="hsl(var(--muted))"
-          strokeWidth="10%"
-          fill="none"
-          className="transition-all duration-700 ease-out"
+          strokeWidth="12"
+          className="opacity-60"
         />
+        {/* Progress ring - only render stroke when > 0% */}
         <circle
-          cx="50%"
-          cy="50%"
-          r="45%"
-          stroke="hsl(var(--primary))"
-          strokeWidth="10%"
+          cx="72"
+          cy="72"
+          r="58"
           fill="none"
-          strokeDasharray="283"
-          strokeDashoffset={283 - (283 * percentage) / 100}
+          stroke="url(#progressGradient)"
+          strokeWidth="12"
           strokeLinecap="round"
-          className="transition-all duration-700 ease-out"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          className="transition-all duration-1000 ease-out"
+          style={{ opacity: percentage > 0 ? 1 : 0 }}
         />
+        {/* Gradient definition */}
+        <defs>
+          <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="hsl(var(--primary))" />
+            <stop offset="100%" stopColor="hsl(var(--accent))" />
+          </linearGradient>
+        </defs>
       </svg>
 
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-      <span className="text-3xl font-bold">
-        {Math.round((value / maxDays) * 100)}%
-      </span>
-      <span className="text-xs rounded-full bg-primary/10 text-primary px-3 py-1 font-medium">
-        Month Progress
-      </span>
-    </div>
+        <span className="text-4xl font-bold tracking-tight text-foreground">
+          {Math.round(percentage)}%
+        </span>
+        <span className="text-xs text-muted-foreground font-medium mt-1">
+          Month Progress
+        </span>
+      </div>
     </div>
   );
 }
@@ -375,22 +386,27 @@ export default function ClientDashboard() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-primary/5 to-background border-primary/20">
-            <CardHeader><CardTitle>Your Journey</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-            <div className="flex items-center justify-center py-6">
-              <StreakRing value={completedDays} maxDays={daysInCurrentMonth} />
-            </div>
-
-            {goal && (
-              <div className="rounded-xl bg-muted/50 p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <Target className="h-4 w-4 text-primary" />
-                  <p className="text-sm text-muted-foreground">Your Goal</p>
-                </div>
-                <p className="font-semibold text-lg">{goal}</p>
+          <Card className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5 border-primary/10 shadow-lg">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/3 to-transparent pointer-events-none" />
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-semibold">Your Journey</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 relative">
+              <div className="flex items-center justify-center py-4">
+                <StreakRing value={completedDays} maxDays={daysInCurrentMonth} />
               </div>
-            )}
+
+              {goal && (
+                <div className="rounded-2xl bg-muted/40 backdrop-blur-sm p-4 border border-border/50">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-1.5 rounded-lg bg-primary/10">
+                      <Target className="h-4 w-4 text-primary" />
+                    </div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Your Goal</p>
+                  </div>
+                  <p className="font-semibold text-base text-foreground">{goal}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
