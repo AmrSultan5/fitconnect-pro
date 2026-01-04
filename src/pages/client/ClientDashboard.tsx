@@ -2,17 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -26,11 +16,10 @@ import {
   ClipboardList,
   Utensils,
   User,
-  Save,
-  Edit,
   MessageSquare,
   ArrowRight,
-  UserCircle
+  UserCircle,
+  Target
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { Link, useNavigate } from "react-router-dom";
@@ -118,21 +107,10 @@ export default function ClientDashboard() {
   const [isLoadingCoach, setIsLoadingCoach] = useState(false);
   const [completedDays, setCompletedDays] = useState(0);
   const navigate = useNavigate();
-  
-  // Profile editing state
-  const [profileData, setProfileData] = useState({
-    age: "",
-    height_cm: "",
-    weight_kg: "",
-    goal_type: "",
-    goal_notes: "",
-  });
-  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
-  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   const today = useMemo(() => new Date(), []);
   const daysInCurrentMonth = useMemo(() => {
-    return endOfMonth(today).getDate(); // 28, 29, 30, or 31
+    return endOfMonth(today).getDate();
   }, [today]);  
   const todayStr = useMemo(() => format(today, "yyyy-MM-dd"), [today]);  
 
@@ -190,46 +168,26 @@ export default function ClientDashboard() {
     }
   }, [user]);  
 
-  const fetchProfileData = useCallback(async () => {
+  const fetchGoalData = useCallback(async () => {
     if (!user) return;
     
-    setIsLoadingProfile(true);
-    const { data: profileData } = await supabase
+    const { data } = await supabase
       .from("client_profiles")
-      .select("age, height_cm, weight_kg, goal")
+      .select("goal")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (profileData) {
-      // Parse goal - if it contains ":" assume format "Goal Type: [type]\nNotes: [notes]"
-      // Otherwise treat entire goal as goal_type
-      let goalType = "";
-      let goalNotes = "";
-      
-      if (profileData.goal) {
-        if (profileData.goal.includes("Goal Type:")) {
-          const lines = profileData.goal.split("\n");
-          const typeLine = lines.find(l => l.startsWith("Goal Type:"));
-          const notesLine = lines.find(l => l.startsWith("Notes:"));
-          if (typeLine) goalType = typeLine.replace("Goal Type:", "").trim();
-          if (notesLine) goalNotes = notesLine.replace("Notes:", "").trim();
-        } else {
-          // Legacy format - just text
-          goalType = profileData.goal;
+    if (data?.goal) {
+      // Parse goal type from stored format
+      if (data.goal.includes("Goal Type:")) {
+        const typeLine = data.goal.split("\n").find((l: string) => l.startsWith("Goal Type:"));
+        if (typeLine) {
+          setGoal(typeLine.replace("Goal Type:", "").trim());
         }
+      } else {
+        setGoal(data.goal);
       }
-
-      setProfileData({
-        age: profileData.age?.toString() || "",
-        height_cm: profileData.height_cm?.toString() || "",
-        weight_kg: profileData.weight_kg?.toString() || "",
-        goal_type: goalType,
-        goal_notes: goalNotes,
-      });
-
-      setGoal(goalType || null);
     }
-    setIsLoadingProfile(false);
   }, [user]);
 
   const fetchData = useCallback(async () => {
@@ -269,7 +227,7 @@ export default function ClientDashboard() {
         calculateCompletedDaysThisMonth(attendanceData as AttendanceRecord[])
       );     
     }
-  }, [user, todayStr]);
+  }, [user, todayStr, today]);
 
   const calculateStreak = (records: AttendanceRecord[]) => {
     let currentStreak = 0;
@@ -304,7 +262,6 @@ export default function ClientDashboard() {
     
     setIsLoading(true);
     try {
-      // Deactivate current coach assignment
       const { error } = await supabase
         .from("coach_client_assignments")
         .update({ is_active: false })
@@ -315,7 +272,6 @@ export default function ClientDashboard() {
         throw error;
       }
 
-      // Clear coach data
       setCoachId(null);
       setCoachName(null);
       setCoachSpecialties(null);
@@ -326,7 +282,6 @@ export default function ClientDashboard() {
         description: "You can now select a new coach from the marketplace.",
       });
 
-      // Redirect to marketplace
       navigate("/coaches");
     } catch (error) {
       console.error("Error changing coach:", error);
@@ -340,74 +295,20 @@ export default function ClientDashboard() {
     }
   };
 
-  const handleSaveProfile = async () => {
-    if (!user) return;
-
-    setIsSavingProfile(true);
-
-    try {
-      // Format goal with type and notes
-      let goalValue = "";
-      if (profileData.goal_type) {
-        goalValue = `Goal Type: ${profileData.goal_type}`;
-        if (profileData.goal_notes) {
-          goalValue += `\nNotes: ${profileData.goal_notes}`;
-        }
-      }
-
-      // Update client_profiles
-      const { error: updateError } = await supabase
-        .from("client_profiles")
-        .upsert({
-          user_id: user.id,
-          age: profileData.age ? parseInt(profileData.age) : null,
-          height_cm: profileData.height_cm ? parseFloat(profileData.height_cm) : null,
-          weight_kg: profileData.weight_kg ? parseFloat(profileData.weight_kg) : null,
-          goal: goalValue || null,
-        }, { onConflict: "user_id" });
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      // Update local goal state for display
-      setGoal(profileData.goal_type || null);
-
-      toast({
-        title: "Success",
-        description: "Profile updated successfully",
-      });
-
-    } catch (error) {
-      console.error("Error saving profile:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to save profile";
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: errorMessage,
-      });
-    } finally {
-      setIsSavingProfile(false);
-    }
-  };
-
   const daysInMonth = eachDayOfInterval({ start: startOfMonth(today), end: endOfMonth(today) });
   const getStatusForDay = (day: Date) => attendance.find(a => a.date === format(day, "yyyy-MM-dd"))?.status;
 
-// Coach data – once
-useEffect(() => {
-  if (user) fetchCoachData();
-}, [user, fetchCoachData]);
+  useEffect(() => {
+    if (user) fetchCoachData();
+  }, [user, fetchCoachData]);
 
-// Profile – once
-useEffect(() => {
-  if (user) fetchProfileData();
-}, [user, fetchProfileData]);
+  useEffect(() => {
+    if (user) fetchGoalData();
+  }, [user, fetchGoalData]);
 
-// Attendance – month-based
-useEffect(() => {
-  if (user) fetchData();
-}, [user, fetchData]); 
+  useEffect(() => {
+    if (user) fetchData();
+  }, [user, fetchData]); 
 
   return (
     <DashboardLayout>
@@ -482,8 +383,11 @@ useEffect(() => {
             </div>
 
             {goal && (
-              <div className="rounded-xl bg-muted/50 p-4 text-center">
-                <p className="text-sm text-muted-foreground">Goal</p>
+              <div className="rounded-xl bg-muted/50 p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Target className="h-4 w-4 text-primary" />
+                  <p className="text-sm text-muted-foreground">Your Goal</p>
+                </div>
                 <p className="font-semibold text-lg">{goal}</p>
               </div>
             )}
@@ -594,111 +498,6 @@ useEffect(() => {
             </CardContent>
           </Card>
         )}
-
-        {/* Profile & Goals Section */}
-        <Card className="bg-gradient-to-br from-primary/5 to-background border-primary/20">
-          <CardHeader>
-          <CardTitle className="flex items-center justify-center sm:justify-start gap-2 text-center sm:text-left">
-              <Edit className="h-5 w-5" />
-              Profile & Goals
-            </CardTitle>
-            <CardDescription>Update your profile information and fitness goals</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {isLoadingProfile && !profileData.age ? (
-              <div className="text-center py-8 text-muted-foreground">Loading profile...</div>
-            ) : (
-              <>
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="age">Age</Label>
-                    <Input
-                      id="age"
-                      type="number"
-                      min="1"
-                      max="120"
-                      value={profileData.age}
-                      onChange={(e) => setProfileData({ ...profileData, age: e.target.value })}
-                      placeholder="Enter your age"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="height">Height (cm)</Label>
-                    <Input
-                      id="height"
-                      type="number"
-                      min="50"
-                      max="250"
-                      step="0.1"
-                      value={profileData.height_cm}
-                      onChange={(e) => setProfileData({ ...profileData, height_cm: e.target.value })}
-                      placeholder="e.g., 180"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="weight">Weight (kg)</Label>
-                    <Input
-                      id="weight"
-                      type="number"
-                      min="20"
-                      max="300"
-                      step="0.1"
-                      value={profileData.weight_kg}
-                      onChange={(e) => setProfileData({ ...profileData, weight_kg: e.target.value })}
-                      placeholder="e.g., 75"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4 border-t pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="goal_type">Fitness Goal</Label>
-                    <Select
-                      value={profileData.goal_type}
-                      onValueChange={(value) => setProfileData({ ...profileData, goal_type: value })}
-                    >
-                      <SelectTrigger id="goal_type">
-                        <SelectValue placeholder="Select your goal" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Fat Loss">Fat Loss</SelectItem>
-                        <SelectItem value="Muscle Gain">Muscle Gain</SelectItem>
-                        <SelectItem value="Maintenance">Maintenance</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="goal_notes">Goal Notes (Optional)</Label>
-                    <Textarea
-                      id="goal_notes"
-                      value={profileData.goal_notes}
-                      onChange={(e) => setProfileData({ ...profileData, goal_notes: e.target.value })}
-                      placeholder="Add any additional details about your fitness goals..."
-                      className="min-h-[100px]"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-2">
-                  <Button onClick={handleSaveProfile} disabled={isSavingProfile}>
-                    {isSavingProfile ? (
-                      <>
-                        <Save className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="mr-2 h-4 w-4" />
-                        Save Profile
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
       </div>
     </DashboardLayout>
   );
