@@ -51,6 +51,8 @@ const getClientNav = (coachName: string | null): NavItem[] => {
     baseNav.push({ title: "Find a Coach", href: "/coaches", icon: Store });
   }
 
+  baseNav.push({ title: "Settings", href: "/client/settings", icon: Settings });
+
   return baseNav;
 };
 
@@ -219,7 +221,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem asChild>
-                <Link to="/settings" className="flex items-center gap-2">
+                <Link to={role === "client" ? "/client/settings" : "/settings"} className="flex items-center gap-2">
                   <Settings className="h-4 w-4" />
                   Settings
                 </Link>
