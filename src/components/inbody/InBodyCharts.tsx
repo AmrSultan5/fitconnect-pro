@@ -28,7 +28,7 @@ function TrendIcon({ value }: { value: number | null }) {
   return <Minus className="h-4 w-4 text-muted-foreground" />;
 }
 
-function formatChange(value: number | null, unit: string, inverse = false): string {
+function formatChange(value: number | null, unit: string): string {
   if (value === null) return 'No data';
   const sign = value > 0 ? '+' : '';
   return `${sign}${value}${unit}`;
@@ -87,20 +87,35 @@ export function InBodyCharts({ records, insights }: InBodyChartsProps) {
     <div className="space-y-6">
       {/* Weight Chart */}
       <Card className="bg-gradient-to-br from-blue-500/5 to-background border-blue-500/20 overflow-hidden">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Scale className="h-5 w-5 text-blue-500" />
-              Weight Trend
-            </CardTitle>
-            <div className="flex items-center gap-2 text-sm">
-              <TrendIcon value={insights.weightChange} />
-              <span className={insights.weightChange && insights.weightChange < 0 ? 'text-green-500' : 'text-muted-foreground'}>
-                {formatChange(insights.weightChange, ' kg')}
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Scale className="h-5 w-5 text-blue-500" />
+            Weight Trend
+          </CardTitle>
+
+          <div className="flex items-center gap-2 text-sm">
+            {records.length === 1 ? (
+              <span className="text-xs text-muted-foreground">
+                First measurement
               </span>
-            </div>
+            ) : records.length > 1 ? (
+              <>
+                <TrendIcon value={insights.weightChange} />
+                <span
+                  className={
+                    insights.weightChange !== null && insights.weightChange < 0
+                      ? 'text-green-500'
+                      : 'text-muted-foreground'
+                  }
+                >
+                  {formatChange(insights.weightChange, ' kg')}
+                </span>
+              </>
+            ) : null}
           </div>
-        </CardHeader>
+        </div>
+      </CardHeader>
         <CardContent>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -138,22 +153,38 @@ export function InBodyCharts({ records, insights }: InBodyChartsProps) {
 
       {/* Muscle Mass Chart */}
       <Card className="bg-gradient-to-br from-green-500/5 to-background border-green-500/20 overflow-hidden">
-        <CardHeader className="pb-2">
+      <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Dumbbell className="h-5 w-5 text-green-500" />
               Skeletal Muscle Mass
             </CardTitle>
+
             <div className="flex items-center gap-2 text-sm">
-              <TrendIcon value={insights.muscleChange} />
-              <span className={insights.muscleChange && insights.muscleChange > 0 ? 'text-green-500' : 'text-muted-foreground'}>
-                {formatChange(insights.muscleChange, ' kg')}
-              </span>
+              {records.length === 1 ? (
+                <span className="text-xs text-muted-foreground">
+                  First measurement
+                </span>
+              ) : records.length > 1 ? (
+                <>
+                  <TrendIcon value={insights.muscleChange} />
+                  <span
+                    className={
+                      insights.muscleChange !== null && insights.muscleChange > 0
+                        ? 'text-green-500'
+                        : 'text-muted-foreground'
+                    }
+                  >
+                    {formatChange(insights.muscleChange, ' kg')}
+                  </span>
+                </>
+              ) : null}
             </div>
           </div>
-          {insights.muscleChange !== null && insights.periodDays > 0 && (
+
+          {records.length > 1 && insights.muscleChange !== null && insights.periodDays > 0 && (
             <p className="text-sm text-muted-foreground">
-              {insights.muscleChange > 0 
+              {insights.muscleChange > 0
                 ? `Muscle mass increased by ${insights.muscleChange} kg in ${insights.periodDays} days`
                 : insights.muscleChange < 0
                 ? `Muscle mass decreased by ${Math.abs(insights.muscleChange)} kg in ${insights.periodDays} days`
@@ -199,29 +230,45 @@ export function InBodyCharts({ records, insights }: InBodyChartsProps) {
 
       {/* Body Fat Chart */}
       <Card className="bg-gradient-to-br from-orange-500/5 to-background border-orange-500/20 overflow-hidden">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Percent className="h-5 w-5 text-orange-500" />
-              Body Fat Percentage
-            </CardTitle>
-            <div className="flex items-center gap-2 text-sm">
-              <TrendIcon value={insights.fatChange ? -insights.fatChange : null} />
-              <span className={insights.fatChange && insights.fatChange < 0 ? 'text-green-500' : 'text-muted-foreground'}>
-                {formatChange(insights.fatChange, '%')}
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Percent className="h-5 w-5 text-orange-500" />
+            Body Fat Percentage
+          </CardTitle>
+
+          <div className="flex items-center gap-2 text-sm">
+            {records.length === 1 ? (
+              <span className="text-xs text-muted-foreground">
+                First measurement
               </span>
-            </div>
+            ) : records.length > 1 ? (
+              <>
+                <TrendIcon value={insights.fatChange ? -insights.fatChange : null} />
+                <span
+                  className={
+                    insights.fatChange !== null && insights.fatChange < 0
+                      ? 'text-green-500'
+                      : 'text-muted-foreground'
+                  }
+                >
+                  {formatChange(insights.fatChange, '%')}
+                </span>
+              </>
+            ) : null}
           </div>
-          {insights.fatChange !== null && (
-            <p className="text-sm text-muted-foreground">
-              {insights.fatChange < 0 
-                ? `Body fat decreased by ${Math.abs(insights.fatChange)}%`
-                : insights.fatChange > 0
-                ? `Body fat increased by ${insights.fatChange}%`
-                : 'Body fat stable'}
-            </p>
-          )}
-        </CardHeader>
+        </div>
+
+        {records.length > 1 && insights.fatChange !== null && (
+          <p className="text-sm text-muted-foreground">
+            {insights.fatChange < 0
+              ? `Body fat decreased by ${Math.abs(insights.fatChange)}%`
+              : insights.fatChange > 0
+              ? `Body fat increased by ${insights.fatChange}%`
+              : 'Body fat stable'}
+          </p>
+        )}
+      </CardHeader>
         <CardContent>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">

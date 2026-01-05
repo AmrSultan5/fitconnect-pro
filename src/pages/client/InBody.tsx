@@ -4,10 +4,11 @@ import { InBodyCharts } from '@/components/inbody/InBodyCharts';
 import { useInBodyRecords } from '@/hooks/useInBodyRecords';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Scale } from 'lucide-react';
+import { useMemo } from "react";
 
 export default function InBody() {
   const { records, isLoading, isSaving, saveRecord, getInsights } = useInBodyRecords();
-  const insights = getInsights();
+  const insights = useMemo(() => getInsights(), [records]);
 
   return (
     <DashboardLayout>
@@ -29,11 +30,19 @@ export default function InBody() {
         {/* Charts Section */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Your Progress</h2>
+
           {isLoading ? (
             <div className="space-y-6">
               <Skeleton className="h-80 w-full rounded-xl" />
               <Skeleton className="h-80 w-full rounded-xl" />
               <Skeleton className="h-80 w-full rounded-xl" />
+            </div>
+          ) : records.length === 0 ? (
+            <div className="rounded-xl border border-dashed p-8 text-center">
+              <p className="text-lg font-medium">No InBody data yet</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Add your first measurement to see progress and insights.
+              </p>
             </div>
           ) : (
             <InBodyCharts records={records} insights={insights} />

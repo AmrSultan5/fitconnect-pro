@@ -35,7 +35,11 @@ export function useInBodyRecords() {
   const [isSaving, setIsSaving] = useState(false);
 
   const fetchRecords = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setRecords([]);
+      setIsLoading(false);
+      return;
+    }    
     
     setIsLoading(true);
     try {
@@ -137,8 +141,10 @@ export function useInBodyRecords() {
   }, [records]);
 
   useEffect(() => {
-    fetchRecords();
-  }, [fetchRecords]);
+    if (user) {
+      fetchRecords();
+    }
+  }, [user, fetchRecords]);  
 
   return {
     records,
