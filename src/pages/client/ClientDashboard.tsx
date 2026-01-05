@@ -6,6 +6,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useInBodyRecords } from "@/hooks/useInBodyRecords";
+import { InBodyMiniChart } from "@/components/inbody/InBodyMiniChart";
 import { 
   Calendar, 
   CheckCircle2, 
@@ -19,7 +21,8 @@ import {
   MessageSquare,
   ArrowRight,
   UserCircle,
-  Target
+  Target,
+  Scale
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { Link, useNavigate } from "react-router-dom";
@@ -98,6 +101,37 @@ function StreakRing({
           Month Progress
         </span>
       </div>
+    </div>
+  );
+}
+
+// InBody Dashboard Section - compact mini chart for Your Journey
+function InBodyDashboardSection() {
+  const { records, isLoading, getMonthlyInsights } = useInBodyRecords();
+  const insights = getMonthlyInsights();
+  
+  if (isLoading) {
+    return (
+      <div className="rounded-2xl bg-muted/40 backdrop-blur-sm p-4 border border-border/50 animate-pulse">
+        <div className="h-24 bg-muted/60 rounded-lg" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl bg-muted/40 backdrop-blur-sm p-4 border border-border/50">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-primary/10">
+            <Scale className="h-4 w-4 text-primary" />
+          </div>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Body Composition</p>
+        </div>
+        <Link to="/client/inbody" className="text-xs text-primary hover:underline">
+          View All →
+        </Link>
+      </div>
+      <InBodyMiniChart records={records} insights={insights} />
     </div>
   );
 }
@@ -407,6 +441,9 @@ export default function ClientDashboard() {
                   <p className="font-semibold text-base text-foreground">{goal}</p>
                 </div>
               )}
+              
+              {/* InBody Mini Chart */}
+              <InBodyDashboardSection />
             </CardContent>
           </Card>
         </div>

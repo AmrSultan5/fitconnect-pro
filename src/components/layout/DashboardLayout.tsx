@@ -26,6 +26,7 @@ import {
   User,
   Shield,
   MessageSquare,
+  Scale,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +43,7 @@ const getClientNav = (coachName: string | null): NavItem[] => {
     { title: "Attendance", href: "/client/attendance", icon: Calendar },
     { title: "Workout Plan", href: "/client/workouts", icon: ClipboardList },
     { title: "Diet Plan", href: "/client/diets", icon: Utensils },
+    { title: "InBody", href: "/client/inbody", icon: Scale },
     { title: "Progress Photos", href: "/client/progress-photos", icon: Image },
   ];
 
