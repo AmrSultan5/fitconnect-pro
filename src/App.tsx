@@ -16,6 +16,7 @@ import WorkoutPlans from "./pages/client/WorkoutPlans";
 import DietPlans from "./pages/client/DietPlans";
 import ProgressPhotos from "./pages/client/ProgressPhotos";
 import CoachPage from "./pages/client/CoachPage";
+import InBody from "./pages/client/InBody";
 import CoachDashboard from "./pages/coach/CoachDashboard";
 import ClientDetailPage from "./pages/coach/ClientDetailPage";
 import WorkoutPlansPage from "./pages/coach/WorkoutPlansPage";
@@ -51,6 +52,7 @@ const App = () => (
               <Route path="/client/progress-photos" element={<ProtectedRoute allowedRoles={["client"]}><ProfileCompletionGuard><ProgressPhotos /></ProfileCompletionGuard></ProtectedRoute>} />
               <Route path="/client/attendance" element={<ProtectedRoute allowedRoles={["client"]}><ProfileCompletionGuard><AttendanceHistory /></ProfileCompletionGuard></ProtectedRoute>} />
               <Route path="/client/coach" element={<ProtectedRoute allowedRoles={["client"]}><ProfileCompletionGuard><CoachPage /></ProfileCompletionGuard></ProtectedRoute>} />
+              <Route path="/client/inbody" element={<ProtectedRoute allowedRoles={["client"]}><ProfileCompletionGuard><InBody /></ProfileCompletionGuard></ProtectedRoute>} />
               
               {/* Coach Routes */}
               <Route path="/coach" element={<ProtectedRoute allowedRoles={["coach"]}><CoachDashboard /></ProtectedRoute>} />

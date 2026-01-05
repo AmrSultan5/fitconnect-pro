@@ -206,6 +206,36 @@ export type Database = {
         }
         Relationships: []
       }
+      inbody_records: {
+        Row: {
+          body_fat_percentage: number
+          created_at: string
+          date: string
+          id: string
+          skeletal_muscle_kg: number
+          user_id: string
+          weight_kg: number
+        }
+        Insert: {
+          body_fat_percentage: number
+          created_at?: string
+          date?: string
+          id?: string
+          skeletal_muscle_kg: number
+          user_id: string
+          weight_kg: number
+        }
+        Update: {
+          body_fat_percentage?: number
+          created_at?: string
+          date?: string
+          id?: string
+          skeletal_muscle_kg?: number
+          user_id?: string
+          weight_kg?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
