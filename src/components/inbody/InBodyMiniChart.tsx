@@ -1,13 +1,16 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   ResponsiveContainer,
   Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
 import { TrendingUp, TrendingDown, Minus, Scale, Dumbbell, Percent } from 'lucide-react';
 import { format } from 'date-fns';
 import type { InBodyRecord, InBodyInsights } from '@/hooks/useInBodyRecords';
+
 
 interface InBodyMiniChartProps {
   records: InBodyRecord[];
@@ -44,7 +47,7 @@ function InsightPill({
   );
 }
 
-function MiniTooltip({ active, payload }: any) {
+function MiniTooltip({ active, payload, metric }: any) {
   if (!active || !payload || !payload.length) return null;
   const data = payload[0].payload;
   
@@ -52,15 +55,18 @@ function MiniTooltip({ active, payload }: any) {
     <div className="rounded-lg bg-background/95 backdrop-blur-sm border border-border/50 shadow-lg p-2 text-xs">
       <p className="text-muted-foreground mb-1">{data.fullDate}</p>
       <div className="space-y-0.5">
-        <p><span className="text-blue-500">●</span> {data.weight} kg</p>
-        <p><span className="text-green-500">●</span> {data.muscle} kg</p>
-        <p><span className="text-orange-500">●</span> {data.fat}%</p>
+      <p className="font-medium">
+        {metric === 'weight' && `${data.weight} kg`}
+        {metric === 'muscle' && `${data.muscle} kg`}
+        {metric === 'fat' && `${data.fat}%`}
+      </p>
       </div>
     </div>
   );
 }
 
 export function InBodyMiniChart({ records, insights }: InBodyMiniChartProps) {
+  const [metric, setMetric] = useState<'weight' | 'muscle' | 'fat'>('weight');
   const chartData = useMemo(() => {
     // Take last 10 records for mini chart
     const recentRecords = records.slice(-10);
@@ -84,45 +90,64 @@ export function InBodyMiniChart({ records, insights }: InBodyMiniChartProps) {
 
   return (
     <div className="space-y-4">
-      {/* Mini Combined Chart */}
-      <div className="h-24">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-            <Tooltip content={<MiniTooltip />} />
-            <Line
-              type="monotone"
-              dataKey="weight"
-              stroke="hsl(210 100% 50%)"
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 3, strokeWidth: 0 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="muscle"
-              stroke="hsl(142 76% 36%)"
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 3, strokeWidth: 0 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="fat"
-              stroke="hsl(25 95% 53%)"
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 3, strokeWidth: 0 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+      <div className="flex gap-2">
+        {[
+          { key: 'weight', label: 'Weight (kg)' },
+          { key: 'muscle', label: 'Muscle (kg)' },
+          { key: 'fat', label: 'Body Fat (%)' },
+        ].map((m) => (
+          <button
+            key={m.key}
+            onClick={() => setMetric(m.key as any)}
+            className={`
+              text-xs px-3 py-1 rounded-full transition
+              ${metric === m.key
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted hover:bg-primary/10'}
+            `}
+          >
+            {m.label}
+          </button>
+        ))}
       </div>
+      {/* Body Composition Trend */}
+      <div className="h-32">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={chartData}>
+          <defs>
+            <linearGradient id="metricGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
+            </linearGradient>
+          </defs>
 
-      {/* Chart Legend */}
-      <div className="flex justify-center gap-4 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Weight</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500"></span> Muscle</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500"></span> Fat %</span>
-      </div>
+          <XAxis
+            dataKey="date"
+            tick={{ fontSize: 10 }}
+            axisLine={false}
+            tickLine={false}
+          />
+
+          <YAxis
+            tick={{ fontSize: 10 }}
+            axisLine={false}
+            tickLine={false}
+            domain={['auto', 'auto']}
+          />
+
+        <Tooltip content={<MiniTooltip metric={metric} />} />
+
+          <Area
+            type="monotone"
+            dataKey={metric}
+            stroke="hsl(var(--primary))"
+            fill="url(#metricGradient)"
+            strokeWidth={2}
+            dot={false}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
 
       {/* Monthly Insights */}
       <div className="space-y-2 pt-2 border-t border-border/50">
