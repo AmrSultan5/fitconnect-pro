@@ -128,58 +128,67 @@ export default function AttendanceHistory() {
 
         {/* Stats Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="rounded-lg bg-success/10 p-3">
-                  <CheckCircle2 className="h-5 w-5 text-success" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Trained</p>
-                  <p className="text-2xl font-bold">{stats.trained}</p>
-                </div>
+
+        {/* Trained */}
+        <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="rounded-full bg-green-500/20 p-3">
+                <CheckCircle2 className="h-6 w-6 text-green-500" />
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="rounded-lg bg-secondary/10 p-3">
-                  <Moon className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Rest Days</p>
-                  <p className="text-2xl font-bold">{stats.rest}</p>
-                </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Training Days</p>
+                <p className="text-3xl font-bold">{stats.trained}</p>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="rounded-lg bg-destructive/10 p-3">
-                  <XCircle className="h-5 w-5 text-destructive" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Missed</p>
-                  <p className="text-2xl font-bold">{stats.missed}</p>
-                </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Rest */}
+        <Card className="bg-gradient-to-br from-muted/40 to-muted/10 border-border/30">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="rounded-full bg-muted p-3">
+                <Moon className="h-6 w-6 text-muted-foreground" />
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="rounded-lg bg-warning/10 p-3">
-                  <Flame className="h-5 w-5 text-warning" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Current Streak</p>
-                  <p className="text-2xl font-bold">{stats.streak} days</p>
-                </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Rest Days</p>
+                <p className="text-3xl font-bold">{stats.rest}</p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Missed */}
+        <Card className="bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="rounded-full bg-red-500/20 p-3">
+                <XCircle className="h-6 w-6 text-red-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Missed</p>
+                <p className="text-3xl font-bold">{stats.missed}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Streak */}
+        <Card className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border-orange-500/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="rounded-full bg-orange-500/20 p-3">
+                <Flame className="h-6 w-6 text-orange-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Current Streak</p>
+                <p className="text-3xl font-bold">{stats.streak} 🔥</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         </div>
 
         {/* Calendar View */}
@@ -300,4 +309,3 @@ export default function AttendanceHistory() {
     </DashboardLayout>
   );
 }
-

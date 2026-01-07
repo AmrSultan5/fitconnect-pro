@@ -388,49 +388,66 @@ export default function ClientDashboard() {
           </CardContent>
         </Card>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20">
+        {/* Quick Actions */}
+        <div className="space-y-4">
+
+        {/* Attendance – FULL WIDTH */}
+        <Card className="bg-gradient-to-br from-primary/10 to-background border-primary/30 shadow-sm">
         <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
-            <div className="rounded-full bg-green-500/20 p-3">
-              <TrendingUp className="h-6 w-6 text-green-500" />
+          <Link
+            to="/client/attendance"
+            className="flex flex-col items-center text-center gap-3"
+          >
+            <div className="rounded-xl bg-primary/15 p-4">
+              <Calendar className="h-7 w-7 text-primary" />
             </div>
+
             <div>
-              <p className="text-sm text-muted-foreground">Training Days</p>
-              <p className="text-3xl font-bold">{monthlyStats.trained}</p>
+              <p className="text-sm text-muted-foreground">
+                Attendance
+              </p>
+              <p className="text-base font-semibold text-primary">
+                View history & streak →
+              </p>
             </div>
-          </div>
+          </Link>
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border-orange-500/20">
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
-            <div className="rounded-full bg-orange-500/20 p-3">
-              <Flame className="h-6 w-6 text-orange-500" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Current Streak</p>
-              <p className="text-3xl font-bold">{streak} 🔥</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-          <Card className="bg-gradient-to-br from-primary/5 to-background border-primary/20"><CardContent className="pt-6"><Link to="/client/workouts" className="flex items-center gap-4"><div className="rounded-lg bg-primary/10 p-3"><ClipboardList className="h-5 w-5 text-primary" /></div><div><p className="text-sm text-muted-foreground">Workout</p><p className="text-sm font-medium text-primary">View →</p></div></Link></CardContent></Card>
-          <Card className="bg-gradient-to-br from-primary/5 to-background border-primary/20"><CardContent className="pt-6"><Link to="/client/diets" className="flex items-center gap-4"><div className="rounded-lg bg-accent/10 p-3"><Utensils className="h-5 w-5 text-accent" /></div><div><p className="text-sm text-muted-foreground">Diet</p><p className="text-sm font-medium text-primary">View →</p></div></Link></CardContent></Card>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2">
+        {/* Workout + Diet – SIDE BY SIDE */}
+        <div className="grid grid-cols-2 gap-4">
           <Card className="bg-gradient-to-br from-primary/5 to-background border-primary/20">
-            <CardHeader><CardTitle>{format(today, "MMMM yyyy")}</CardTitle></CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-7 gap-1 text-center text-xs">
-                {["S","M","T","W","T","F","S"].map((d,i)=><div key={i} className="py-2 font-medium text-muted-foreground">{d}</div>)}
-                {Array.from({length:startOfMonth(today).getDay()}).map((_,i)=><div key={`e-${i}`}/>)}
-                {daysInMonth.map(day=>{const s=getStatusForDay(day);const isT=isSameDay(day,today);return<div key={day.toISOString()} className={`aspect-square flex items-center justify-center rounded-md text-sm ${isT?"ring-2 ring-primary":""} ${s==="trained"?"bg-success text-success-foreground":s==="rest"?"bg-secondary":s==="missed"?"bg-destructive text-destructive-foreground":"bg-muted/50"}`}>{format(day,"d")}</div>})}
-              </div>
+            <CardContent className="pt-6">
+              <Link to="/client/workouts" className="flex items-center gap-4">
+                <div className="rounded-lg bg-primary/10 p-3">
+                  <ClipboardList className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Workout</p>
+                  <p className="text-sm font-medium text-primary">View →</p>
+                </div>
+              </Link>
             </CardContent>
           </Card>
+
+          <Card className="bg-gradient-to-br from-primary/5 to-background border-primary/20">
+            <CardContent className="pt-6">
+              <Link to="/client/diets" className="flex items-center gap-4">
+                <div className="rounded-lg bg-accent/10 p-3">
+                  <Utensils className="h-5 w-5 text-accent" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Diet</p>
+                  <p className="text-sm font-medium text-primary">View →</p>
+                </div>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+
+        </div>
+
+        <div className="space-y-6">
           <Card className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5 border-primary/10 shadow-lg">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/3 to-transparent pointer-events-none" />
             <CardHeader className="pb-2">
