@@ -119,7 +119,15 @@ function InBodyDashboardSection() {
   }
 
   return (
-    <div className="rounded-2xl bg-muted/40 backdrop-blur-sm p-4 border border-border/50">
+    <div
+        className="
+          rounded-2xl
+          bg-gradient-to-br from-background to-muted/50
+          p-5
+          border border-border/50
+          space-y-4
+        "
+      >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-lg bg-primary/10">
@@ -132,6 +140,9 @@ function InBodyDashboardSection() {
         </Link>
       </div>
       <InBodyMiniChart records={records} insights={insights} />
+      <p className="text-xs text-muted-foreground">
+        📈 Tracking consistency leads to better results
+      </p>
     </div>
   );
 }
@@ -425,25 +436,44 @@ export default function ClientDashboard() {
             <CardHeader className="pb-2">
               <CardTitle className="text-lg font-semibold">Your Journey</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6 relative">
-              <div className="flex items-center justify-center py-4">
-                <StreakRing value={completedDays} maxDays={daysInCurrentMonth} />
-              </div>
+            <CardContent className="space-y-8 relative">
 
-              {goal && (
-                <div className="rounded-2xl bg-muted/40 backdrop-blur-sm p-4 border border-border/50">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="p-1.5 rounded-lg bg-primary/10">
-                      <Target className="h-4 w-4 text-primary" />
-                    </div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Your Goal</p>
-                  </div>
-                  <p className="font-semibold text-base text-foreground">{goal}</p>
+            {/* SECTION 1 — PROGRESS */}
+            <div
+              className="
+                flex flex-col items-center gap-3 py-4
+                drop-shadow-[0_0_20px_hsl(var(--primary)/0.25)]
+              "
+            >
+              <StreakRing value={completedDays} maxDays={daysInCurrentMonth} />
+
+              <p className="text-sm text-muted-foreground">
+                {completedDays} of {daysInCurrentMonth} days completed
+              </p>
+            </div>
+
+            {/* SECTION DIVIDER */}
+            <div className="h-px bg-border/60" />
+
+            {/* SECTION 2 — BODY COMPOSITION */}
+            <InBodyDashboardSection />
+
+            {/* SECTION DIVIDER */}
+            {goal && <div className="h-px bg-border/60" />}
+
+            {/* SECTION 3 — GOAL */}
+            {goal && (
+              <div className="rounded-xl bg-muted/30 p-4 border border-border/40">
+                <div className="flex items-center gap-2 mb-1">
+                  <Target className="h-4 w-4 text-primary/70" />
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Current Goal
+                  </p>
                 </div>
-              )}
-              
-              {/* InBody Mini Chart */}
-              <InBodyDashboardSection />
+                <p className="font-semibold text-foreground">{goal}</p>
+              </div>
+            )}
+
             </CardContent>
           </Card>
         </div>
