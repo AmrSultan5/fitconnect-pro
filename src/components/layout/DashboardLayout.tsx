@@ -48,7 +48,8 @@ const getClientNav = (coachName: string | null): NavItem[] => {
   ];
 
   if (coachName) {
-    baseNav.push({ title: coachName, href: "/client/coach", icon: MessageSquare });
+    baseNav.push({ title: "Chat", href: "/client/chat", icon: MessageSquare });
+    baseNav.push({ title: coachName, href: "/client/coach", icon: User });
   } else {
     baseNav.push({ title: "Find a Coach", href: "/coaches", icon: Store });
   }

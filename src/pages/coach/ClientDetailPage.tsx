@@ -33,6 +33,7 @@ import {
   Edit,
   Trash2,
   AlertCircle,
+  MessageSquare,
 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -379,7 +380,7 @@ export default function ClientDetailPage() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <Button variant="ghost" size="sm" asChild className="mb-2">
               <Link to="/coach">
@@ -392,6 +393,12 @@ export default function ClientDetailPage() {
             </h1>
             <p className="text-muted-foreground">Client overview and management</p>
           </div>
+          <Button asChild>
+            <Link to={`/coach/clients/${clientId}/chat`}>
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Chat with Client
+            </Link>
+          </Button>
         </div>
 
         {/* Client Overview */}
