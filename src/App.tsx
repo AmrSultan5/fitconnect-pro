@@ -17,12 +17,14 @@ import DietPlans from "./pages/client/DietPlans";
 import ProgressPhotos from "./pages/client/ProgressPhotos";
 import CoachPage from "./pages/client/CoachPage";
 import InBody from "./pages/client/InBody";
+import ClientChat from "./pages/client/ClientChat";
 import CoachDashboard from "./pages/coach/CoachDashboard";
 import ClientDetailPage from "./pages/coach/ClientDetailPage";
 import WorkoutPlansPage from "./pages/coach/WorkoutPlansPage";
 import CreateWorkoutPlan from "./pages/coach/CreateWorkoutPlan";
 import DietPlansPage from "./pages/coach/DietPlansPage";
 import CreateDietPlan from "./pages/coach/CreateDietPlan";
+import CoachChat from "./pages/coach/CoachChat";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import CoachMarketplace from "./pages/coaches/CoachMarketplace";
 import CoachProfilePage from "./pages/coaches/CoachProfilePage";
@@ -53,6 +55,7 @@ const App = () => (
               <Route path="/client/attendance" element={<ProtectedRoute allowedRoles={["client"]}><ProfileCompletionGuard><AttendanceHistory /></ProfileCompletionGuard></ProtectedRoute>} />
               <Route path="/client/coach" element={<ProtectedRoute allowedRoles={["client"]}><ProfileCompletionGuard><CoachPage /></ProfileCompletionGuard></ProtectedRoute>} />
               <Route path="/client/inbody" element={<ProtectedRoute allowedRoles={["client"]}><ProfileCompletionGuard><InBody /></ProfileCompletionGuard></ProtectedRoute>} />
+              <Route path="/client/chat" element={<ProtectedRoute allowedRoles={["client"]}><ProfileCompletionGuard><ClientChat /></ProfileCompletionGuard></ProtectedRoute>} />
               
               {/* Coach Routes */}
               <Route path="/coach" element={<ProtectedRoute allowedRoles={["coach"]}><CoachDashboard /></ProtectedRoute>} />
@@ -62,6 +65,7 @@ const App = () => (
               <Route path="/coach/workouts/new" element={<ProtectedRoute allowedRoles={["coach"]}><CreateWorkoutPlan /></ProtectedRoute>} />
               <Route path="/coach/diets" element={<ProtectedRoute allowedRoles={["coach"]}><DietPlansPage /></ProtectedRoute>} />
               <Route path="/coach/diets/new" element={<ProtectedRoute allowedRoles={["coach"]}><CreateDietPlan /></ProtectedRoute>} />
+              <Route path="/coach/clients/:clientId/chat" element={<ProtectedRoute allowedRoles={["coach"]}><CoachChat /></ProtectedRoute>} />
               
               {/* Admin Routes */}
               <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />

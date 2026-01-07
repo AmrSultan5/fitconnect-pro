@@ -230,7 +230,7 @@ export default function CoachPage() {
           </CardContent>
         </Card>
 
-        {/* Chat Placeholder */}
+        {/* Chat Card */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -240,16 +240,12 @@ export default function CoachPage() {
             <CardDescription>Send messages and get support from your coach</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="rounded-lg border-2 border-dashed p-12 text-center space-y-4">
-              <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto opacity-50" />
-              <div>
-                <p className="font-medium">Chat Coming Soon</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Direct messaging with your coach will be available soon. For now, you can view
-                  your coach's profile and manage your plans.
-                </p>
-              </div>
-            </div>
+            <Button asChild className="w-full">
+              <Link to="/client/chat">
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Open Chat
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
