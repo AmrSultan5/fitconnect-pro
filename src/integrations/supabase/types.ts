@@ -223,6 +223,51 @@ export type Database = {
         }
         Relationships: []
       }
+      coaching_requests: {
+        Row: {
+          availability_days: number
+          client_id: string
+          coach_id: string
+          coach_response: string | null
+          created_at: string
+          experience: Database["public"]["Enums"]["training_experience"]
+          goal: Database["public"]["Enums"]["fitness_goal"]
+          id: string
+          message: string | null
+          responded_at: string | null
+          status: Database["public"]["Enums"]["coaching_request_status"]
+          updated_at: string
+        }
+        Insert: {
+          availability_days: number
+          client_id: string
+          coach_id: string
+          coach_response?: string | null
+          created_at?: string
+          experience: Database["public"]["Enums"]["training_experience"]
+          goal: Database["public"]["Enums"]["fitness_goal"]
+          id?: string
+          message?: string | null
+          responded_at?: string | null
+          status?: Database["public"]["Enums"]["coaching_request_status"]
+          updated_at?: string
+        }
+        Update: {
+          availability_days?: number
+          client_id?: string
+          coach_id?: string
+          coach_response?: string | null
+          created_at?: string
+          experience?: Database["public"]["Enums"]["training_experience"]
+          goal?: Database["public"]["Enums"]["fitness_goal"]
+          id?: string
+          message?: string | null
+          responded_at?: string | null
+          status?: Database["public"]["Enums"]["coaching_request_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       diet_plans: {
         Row: {
           client_id: string
@@ -439,7 +484,15 @@ export type Database = {
     Enums: {
       app_role: "admin" | "coach" | "client"
       attendance_status: "trained" | "rest" | "missed"
+      coaching_request_status: "pending" | "accepted" | "rejected" | "cancelled"
+      fitness_goal:
+        | "lose_fat"
+        | "gain_muscle"
+        | "performance"
+        | "general_fitness"
+        | "other"
       plan_type: "structured" | "pdf"
+      training_experience: "beginner" | "intermediate" | "advanced"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -569,7 +622,16 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "coach", "client"],
       attendance_status: ["trained", "rest", "missed"],
+      coaching_request_status: ["pending", "accepted", "rejected", "cancelled"],
+      fitness_goal: [
+        "lose_fat",
+        "gain_muscle",
+        "performance",
+        "general_fitness",
+        "other",
+      ],
       plan_type: ["structured", "pdf"],
+      training_experience: ["beginner", "intermediate", "advanced"],
     },
   },
 } as const

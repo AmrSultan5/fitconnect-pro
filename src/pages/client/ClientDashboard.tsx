@@ -8,23 +8,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useInBodyRecords } from "@/hooks/useInBodyRecords";
 import { InBodyMiniChart } from "@/components/inbody/InBodyMiniChart";
+import { ClientRequestStatus } from "@/components/coach/ClientRequestStatus";
 import { 
   Calendar, 
   CheckCircle2, 
   Moon, 
   XCircle, 
-  TrendingUp, 
-  Flame,
   ClipboardList,
   Utensils,
-  User,
   MessageSquare,
   ArrowRight,
   UserCircle,
   Target,
   Scale
 } from "lucide-react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { Link, useNavigate } from "react-router-dom";
 import {
   AlertDialog,
@@ -579,24 +577,7 @@ export default function ClientDashboard() {
             </CardContent>
           </Card>
         ) : (
-          <Card className="bg-gradient-to-br from-primary/10 to-background border-primary/30 shadow-md">
-            <CardHeader>
-            <CardTitle className="flex items-center justify-center sm:justify-start gap-2 text-center sm:text-left">
-                <User className="h-5 w-5" />
-                Find a Coach
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Link to="/coaches" className="flex items-center gap-4 rounded-lg border-2 border-dashed p-4 hover:border-primary transition-colors">
-                <User className="h-5 w-5 text-muted-foreground" />
-                <div className="flex-1">
-                  <p className="font-medium">Find a Coach</p>
-                  <p className="text-sm text-muted-foreground">Browse certified coaches to get started</p>
-                </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground" />
-              </Link>
-            </CardContent>
-          </Card>
+          <ClientRequestStatus />
         )}
       </div>
     </DashboardLayout>
