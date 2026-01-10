@@ -3,9 +3,10 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, AlertTriangle, UserX, TrendingUp, Calendar, Activity, UserPlus } from "lucide-react";
+import { Users, AlertTriangle, UserX, TrendingUp, Calendar, Activity, UserPlus, MessageSquare, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format, subDays } from "date-fns";
 import { PendingRequestsInbox } from "@/components/coach/PendingRequestsInbox";
@@ -18,6 +19,7 @@ interface Client {
   goal: string | null;
   daysSinceGym: number;
   avatar_initials: string;
+  unreadMessages: number;
 }
 
 interface Stats {
@@ -92,6 +94,25 @@ export default function CoachDashboard() {
           .gte("date", weekAgo)
           .order("date", { ascending: false });
 
+        // Get unread message count
+        const { data: conversation } = await supabase
+          .from("chat_conversations")
+          .select("id")
+          .eq("coach_id", user.id)
+          .eq("client_id", a.client_id)
+          .maybeSingle();
+
+        let unreadMessages = 0;
+        if (conversation) {
+          const { count } = await supabase
+            .from("chat_messages")
+            .select("*", { count: "exact", head: true })
+            .eq("conversation_id", conversation.id)
+            .eq("is_read", false)
+            .neq("sender_id", user.id);
+          unreadMessages = count || 0;
+        }
+
         const lastTrained = attendance?.find((att) => att.status === "trained");
         const daysSinceGym = lastTrained
           ? Math.floor((Date.now() - new Date(lastTrained.date).getTime()) / 86400000)
@@ -110,6 +131,7 @@ export default function CoachDashboard() {
           goal: clientProfile?.goal || null,
           daysSinceGym,
           avatar_initials: initials,
+          unreadMessages,
         };
       })
     );
@@ -250,10 +272,9 @@ export default function CoachDashboard() {
             <CardContent>
               <div className="space-y-3">
                 {atRiskClients.map((c) => (
-                  <Link
+                  <div
                     key={c.client_id}
-                    to={`/coach/clients/${c.client_id}`}
-                    className="flex items-center gap-4 rounded-xl border bg-card p-4 transition-all hover:shadow-md hover:border-primary/30"
+                    className="flex items-center gap-4 rounded-xl border bg-card p-4"
                   >
                     <Avatar className="h-10 w-10 border">
                       <AvatarFallback className="bg-muted text-muted-foreground text-sm">
@@ -271,7 +292,24 @@ export default function CoachDashboard() {
                       <Calendar className="h-3 w-3" />
                       {c.daysSinceGym === 999 ? "Never" : `${c.daysSinceGym}d`}
                     </Badge>
-                  </Link>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" asChild>
+                        <Link to={`/coach/clients/${c.client_id}`}>
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button size="sm" asChild className="relative">
+                        <Link to={`/coach/clients/${c.client_id}/chat`}>
+                          <MessageSquare className="h-4 w-4" />
+                          {c.unreadMessages > 0 && (
+                            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
+                              {c.unreadMessages}
+                            </span>
+                          )}
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
                 ))}
               </div>
             </CardContent>
@@ -317,9 +355,8 @@ export default function CoachDashboard() {
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
                 {clients.slice(0, 8).map((c) => (
-                  <Link
+                  <div
                     key={c.client_id}
-                    to={`/coach/clients/${c.client_id}`}
                     className="flex items-center gap-4 rounded-xl border bg-card p-4 transition-all hover:shadow-md hover:border-primary/30"
                   >
                     <Avatar className="h-10 w-10 border">
@@ -331,8 +368,27 @@ export default function CoachDashboard() {
                       <p className="font-medium truncate">{c.full_name || c.email}</p>
                       <p className="text-sm text-muted-foreground truncate">{c.goal || "No goal"}</p>
                     </div>
-                    {getStatusBadge(c.daysSinceGym)}
-                  </Link>
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(c.daysSinceGym)}
+                      <div className="flex gap-1">
+                        <Button size="sm" variant="ghost" asChild>
+                          <Link to={`/coach/clients/${c.client_id}`}>
+                            <Eye className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <Button size="sm" variant="ghost" asChild className="relative">
+                          <Link to={`/coach/clients/${c.client_id}/chat`}>
+                            <MessageSquare className="h-4 w-4" />
+                            {c.unreadMessages > 0 && (
+                              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
+                                {c.unreadMessages}
+                              </span>
+                            )}
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}

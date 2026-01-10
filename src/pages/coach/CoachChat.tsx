@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
-import { ChatWindow, ChatHeader } from "@/components/chat";
+import { ChatWindow } from "@/components/chat";
+import { CoachChatHeader } from "@/components/chat/CoachChatHeader";
+import { ChatSuggestions } from "@/components/chat/ChatSuggestions";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertCircle } from "lucide-react";
@@ -14,6 +16,7 @@ export default function CoachChat() {
   const [clientName, setClientName] = useState<string>("Client");
   const [isLoading, setIsLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
+  const [suggestedMessage, setSuggestedMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAccessAndFetchClient = async () => {
@@ -85,14 +88,16 @@ export default function CoachChat() {
   return (
     <DashboardLayout>
       <Card className="flex h-[calc(100vh-8rem)] flex-col overflow-hidden">
-        <ChatHeader 
-          name={clientName} 
-          subtitle="Client"
-          backTo={`/coach/clients/${clientId}`}
+        <CoachChatHeader clientId={clientId!} clientName={clientName} />
+        <ChatSuggestions 
+          clientId={clientId!} 
+          onUseSuggestion={(msg) => setSuggestedMessage(msg)} 
         />
         <ChatWindow 
           partnerId={clientId!} 
           partnerName={clientName}
+          initialMessage={suggestedMessage}
+          onMessageSent={() => setSuggestedMessage(null)}
         />
       </Card>
     </DashboardLayout>
