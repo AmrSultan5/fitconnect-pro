@@ -10,13 +10,23 @@ import { isSameDay, parseISO } from "date-fns";
 interface ChatWindowProps {
   partnerId: string;
   partnerName?: string;
+  initialMessage?: string | null;
+  onMessageSent?: () => void;
 }
 
-export function ChatWindow({ partnerId, partnerName }: ChatWindowProps) {
+export function ChatWindow({ partnerId, partnerName, initialMessage, onMessageSent }: ChatWindowProps) {
   const { user } = useAuth();
   const { messages, isLoading, isSending, sendMessage } = useChat({ partnerId });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleSend = async (text: string) => {
+    const success = await sendMessage(text);
+    if (success && onMessageSent) {
+      onMessageSent();
+    }
+    return success;
+  };
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -97,7 +107,7 @@ export function ChatWindow({ partnerId, partnerName }: ChatWindowProps) {
       </div>
 
       {/* Input area */}
-      <ChatInput onSend={sendMessage} isSending={isSending} />
+      <ChatInput onSend={handleSend} isSending={isSending} initialValue={initialMessage || undefined} />
     </div>
   );
 }
